@@ -1,0 +1,120 @@
+filters:
+  and:
+    - file.inFolder("媒体库/作品")
+    - note_type == "media"
+    - media_type == "anime"
+formulas:
+  year: if(release_date, release_date.toString().slice(0, 4), "未知")
+  rating_label: if(rating, rating.toString() + " ★", "未评分")
+  progress_label: if(status == "进行中", current_episode.toString() + " / " + if(episode_count, episode_count.toString(), "?") + " 集", "")
+properties:
+  title:
+    displayName: 动漫名
+  genres:
+    displayName: 类型
+  release_date:
+    displayName: 首播时间
+  episode_count:
+    displayName: 集数
+  status:
+    displayName: 状态
+  formula.rating_label:
+    displayName: 我的评分
+  formula.progress_label:
+    displayName: 进度
+views:
+  - type: cards
+    name: 全部
+    order:
+      - title
+      - status
+      - formula.rating_label
+      - formula.progress_label
+      - formula.year
+    sort:
+      - property: added_at
+        direction: DESC
+    image: cover
+    imageFit: contain
+    imageAspectRatio: 1.45
+    cardSize: 170
+  - type: cards
+    name: 待观看
+    filters:
+      and:
+        - status == "待体验"
+    order:
+      - title
+      - format
+      - genres
+      - formula.year
+    sort:
+      - property: added_at
+        direction: DESC
+    image: cover
+    imageFit: contain
+    imageAspectRatio: 1.45
+    cardSize: 170
+  - type: cards
+    name: 追番中
+    filters:
+      and:
+        - status == "进行中"
+    order:
+      - title
+      - formula.progress_label
+      - formula.rating_label
+    sort:
+      - property: started_at
+        direction: DESC
+    image: cover
+    imageFit: contain
+    imageAspectRatio: 1.45
+    cardSize: 170
+  - type: cards
+    name: 已完成
+    filters:
+      and:
+        - status == "已完成"
+    order:
+      - title
+      - formula.rating_label
+      - finished_at
+    sort:
+      - property: finished_at
+        direction: DESC
+    image: cover
+    imageFit: contain
+    imageAspectRatio: 1.45
+    cardSize: 170
+  - type: cards
+    name: 高分
+    filters:
+      and:
+        - rating >= 4
+    order:
+      - title
+      - formula.rating_label
+      - format
+      - formula.year
+    sort:
+      - property: rating
+        direction: DESC
+    image: cover
+    imageFit: contain
+    imageAspectRatio: 1.45
+    cardSize: 170
+  - type: table
+    name: 管理表格
+    order:
+      - title
+      - format
+      - genres
+      - release_date
+      - episode_count
+      - current_episode
+      - status
+      - rating
+      - favorite
+      - series
+      - collections

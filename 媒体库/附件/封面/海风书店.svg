@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 600 900">
+  <defs><linearGradient id="g" x2="0" y2="1"><stop stop-color="#123c4b"/><stop offset="1" stop-color="#d9ae72"/></linearGradient></defs>
+  <rect width="600" height="900" fill="url(#g)"/><circle cx="470" cy="180" r="110" fill="#f7dfad" opacity=".85"/>
+  <path d="M0 610 Q140 550 300 630 T600 610 V900 H0Z" fill="#e8d9bd"/><path d="M0 650 Q150 590 300 665 T600 640" fill="none" stroke="#275f6b" stroke-width="18"/>
+  <text x="54" y="100" fill="#f8edda" font-size="28" letter-spacing="8">A FICTIONAL BOOK</text><text x="54" y="200" fill="#fff8e9" font-size="72" font-family="serif">海风书店</text><text x="58" y="250" fill="#fff8e9" font-size="25">THE SEASIDE BOOKSHOP</text>
+</svg>

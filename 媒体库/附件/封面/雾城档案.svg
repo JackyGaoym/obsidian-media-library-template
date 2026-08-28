@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 600 900">
+  <defs><linearGradient id="g" y2="1"><stop stop-color="#24343a"/><stop offset="1" stop-color="#91a29e"/></linearGradient></defs><rect width="600" height="900" fill="url(#g)"/>
+  <g fill="#18272d"><rect x="70" y="400" width="100" height="380"/><rect x="200" y="310" width="130" height="470"/><rect x="370" y="450" width="160" height="330"/></g><g fill="#e5c76f"><circle cx="115" cy="470" r="5"/><circle cx="245" cy="380" r="5"/><circle cx="430" cy="520" r="5"/></g>
+  <path d="M0 520h600M0 610h600M0 720h600" stroke="#e7ece7" stroke-width="55" opacity=".18"/>
+  <text x="48" y="105" fill="#dbe3df" font-size="25" letter-spacing="7">THE FOG CITY FILES</text><text x="48" y="195" fill="#fff" font-size="74" font-family="serif">雾城档案</text>
+</svg>

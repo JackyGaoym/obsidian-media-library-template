@@ -1,0 +1,10 @@
+{
+  "translucency": false,
+  "cssTheme": "Border",
+  "theme": "obsidian",
+  "enabledCssSnippets": [
+    "media-library"
+  ],
+  "showViewHeader": true,
+  "accentColor": "#6657dd"
+}

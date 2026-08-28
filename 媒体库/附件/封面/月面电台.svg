@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 600 900">
+  <rect width="600" height="900" fill="#22233f"/><circle cx="420" cy="350" r="190" fill="#e8e2cf"/><circle cx="365" cy="300" r="30" fill="#c4bead"/><circle cx="470" cy="410" r="44" fill="#c4bead"/>
+  <path d="M40 650 Q150 590 260 650 T480 650 T700 650" fill="none" stroke="#ff7676" stroke-width="18"/><path d="M40 700 Q150 640 260 700 T480 700 T700 700" fill="none" stroke="#6ad4d4" stroke-width="8"/>
+  <text x="45" y="100" fill="#ffcb7b" font-size="26" letter-spacing="8">LUNAR RADIO</text><text x="45" y="190" fill="#fff" font-size="74" font-family="serif">月面电台</text><text x="48" y="240" fill="#bbbde8" font-size="24">BROADCAST FROM THE FAR SIDE</text>
+</svg>

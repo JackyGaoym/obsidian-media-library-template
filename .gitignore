@@ -1,0 +1,20 @@
+.DS_Store
+.trash/
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
+.obsidian/plugins/*/main.js
+.obsidian/plugins/*/styles.css
+.obsidian/plugins/*/manifest.json
+.obsidian/themes/
+
+# 本地登录态、临时导入和截图草稿
+*.cookie
+*.cookies
+*.har
+docs/images/*.draft.*
+
+# 用户使用时可取消下面三行；模板仓库只保留随附的虚构示例。
+# 媒体库/作品/*
+# 媒体库/附件/封面/*
+# 媒体库/附件/横幅/*

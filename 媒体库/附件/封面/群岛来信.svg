@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 600 900">
+  <rect width="600" height="900" fill="#f0e6cf"/><path d="M0 650Q120 580 240 650T480 650T720 650V900H0Z" fill="#7da5a0"/><g fill="#d1b36d"><ellipse cx="160" cy="520" rx="90" ry="35"/><ellipse cx="390" cy="590" rx="120" ry="42"/></g>
+  <path d="M80 330h250v160H80z" fill="#faf4e7" stroke="#a87a59" stroke-width="5" transform="rotate(-7 205 410)"/><path d="M92 347l115 82 110-114" fill="none" stroke="#a87a59" stroke-width="5" transform="rotate(-7 205 410)"/>
+  <text x="48" y="105" fill="#7b5a43" font-size="24" letter-spacing="7">LETTERS FROM ISLANDS</text><text x="48" y="195" fill="#553d31" font-size="74" font-family="serif">群岛来信</text>
+</svg>

@@ -1,0 +1,550 @@
+{
+  "choices": [
+    {
+      "id": "a8f3f962-2f97-4b42-86fb-8c8e3571d9e0",
+      "name": "新增媒体",
+      "type": "Multi",
+      "command": true,
+      "icon": "library-big",
+      "collapsed": false,
+      "choices": [
+        {
+          "id": "2dc58115-8a58-4f8c-bde0-955aa536f301",
+          "name": "图书",
+          "type": "Multi",
+          "command": false,
+          "collapsed": false,
+          "choices": [
+            {
+              "id": "a9afe6e0-d451-4547-bfc7-e894db690d91",
+              "name": "豆瓣导入图书",
+              "type": "Macro",
+              "command": false,
+              "onePageInput": "never",
+              "macro": {
+                "id": "124d6ae7-d418-479a-922d-9026ccedc9ea",
+                "name": "豆瓣导入图书",
+                "commands": [
+                  {
+                    "id": "3e82199e-f7c0-421a-82d0-67e50d21d4d2",
+                    "name": "豆瓣：搜索图书并创建文件",
+                    "type": "Obsidian",
+                    "commandId": "obsidian-douban-plugin:searcher-douban-import-and-create-file-book"
+                  }
+                ]
+              },
+              "runOnStartup": false
+            },
+            {
+              "id": "50ff437e-1ae3-4d32-a961-008885a9a6b9",
+              "name": "手动新增图书",
+              "type": "Template",
+              "command": false,
+              "onePageInput": "always",
+              "templatePath": "媒体库/模板/手动/图书.md",
+              "fileNameFormat": {
+                "enabled": true,
+                "format": "{{VALUE:标题}}（{{VALUE:发行年份|default:未知年份}}）"
+              },
+              "discoverExistingNotesBeforeCreate": true,
+              "folder": {
+                "enabled": true,
+                "folders": [
+                  "媒体库/作品"
+                ],
+                "chooseWhenCreatingNote": false,
+                "createInSameFolderAsActiveFile": false,
+                "chooseFromSubfolders": false
+              },
+              "appendLink": false,
+              "copyLinkToClipboard": false,
+              "openFile": true,
+              "fileOpening": {
+                "location": "tab",
+                "direction": "vertical",
+                "mode": "default",
+                "focus": true
+              },
+              "fileExistsBehavior": {
+                "kind": "prompt"
+              }
+            }
+          ]
+        },
+        {
+          "id": "e2631a3e-a7c7-4af4-9738-940633b4886e",
+          "name": "电视剧",
+          "type": "Multi",
+          "command": false,
+          "collapsed": false,
+          "choices": [
+            {
+              "id": "60a5ef07-e155-4e61-925c-b43b150fbe23",
+              "name": "豆瓣导入电视剧",
+              "type": "Macro",
+              "command": false,
+              "onePageInput": "never",
+              "macro": {
+                "id": "ef08fbf6-d1f9-4475-99c7-1c187da8439e",
+                "name": "豆瓣导入电视剧",
+                "commands": [
+                  {
+                    "id": "0a22ee8c-b305-4ff3-99bd-a08931640145",
+                    "name": "豆瓣：搜索影视并创建文件",
+                    "type": "Obsidian",
+                    "commandId": "obsidian-douban-plugin:searcher-douban-import-and-create-file-movie-tv"
+                  }
+                ]
+              },
+              "runOnStartup": false
+            },
+            {
+              "id": "aa38cdae-11ae-4828-bf83-ab19bfcfd939",
+              "name": "手动新增电视剧",
+              "type": "Template",
+              "command": false,
+              "onePageInput": "always",
+              "templatePath": "媒体库/模板/手动/电视剧.md",
+              "fileNameFormat": {
+                "enabled": true,
+                "format": "{{VALUE:标题}}（{{VALUE:发行年份|default:未知年份}}）"
+              },
+              "discoverExistingNotesBeforeCreate": true,
+              "folder": {
+                "enabled": true,
+                "folders": [
+                  "媒体库/作品"
+                ],
+                "chooseWhenCreatingNote": false,
+                "createInSameFolderAsActiveFile": false,
+                "chooseFromSubfolders": false
+              },
+              "appendLink": false,
+              "copyLinkToClipboard": false,
+              "openFile": true,
+              "fileOpening": {
+                "location": "tab",
+                "direction": "vertical",
+                "mode": "default",
+                "focus": true
+              },
+              "fileExistsBehavior": {
+                "kind": "prompt"
+              }
+            }
+          ]
+        },
+        {
+          "id": "33231650-d582-48a1-900f-085e860da8e4",
+          "name": "电影",
+          "type": "Multi",
+          "command": false,
+          "collapsed": false,
+          "choices": [
+            {
+              "id": "baf682e5-3d4a-451e-b937-0027ca631ebf",
+              "name": "豆瓣导入电影",
+              "type": "Macro",
+              "command": false,
+              "onePageInput": "never",
+              "macro": {
+                "id": "06c04961-d0fd-4608-964a-72c2a07f1e11",
+                "name": "豆瓣导入电影",
+                "commands": [
+                  {
+                    "id": "1a8434c2-6360-42a7-88a8-c987be9fe2ec",
+                    "name": "豆瓣：搜索影视并创建文件",
+                    "type": "Obsidian",
+                    "commandId": "obsidian-douban-plugin:searcher-douban-import-and-create-file-movie-tv"
+                  }
+                ]
+              },
+              "runOnStartup": false
+            },
+            {
+              "id": "e8ca3603-17ae-4abe-95d4-83643a05ada5",
+              "name": "手动新增电影",
+              "type": "Template",
+              "command": false,
+              "onePageInput": "always",
+              "templatePath": "媒体库/模板/手动/电影.md",
+              "fileNameFormat": {
+                "enabled": true,
+                "format": "{{VALUE:标题}}（{{VALUE:发行年份|default:未知年份}}）"
+              },
+              "discoverExistingNotesBeforeCreate": true,
+              "folder": {
+                "enabled": true,
+                "folders": [
+                  "媒体库/作品"
+                ],
+                "chooseWhenCreatingNote": false,
+                "createInSameFolderAsActiveFile": false,
+                "chooseFromSubfolders": false
+              },
+              "appendLink": false,
+              "copyLinkToClipboard": false,
+              "openFile": true,
+              "fileOpening": {
+                "location": "tab",
+                "direction": "vertical",
+                "mode": "default",
+                "focus": true
+              },
+              "fileExistsBehavior": {
+                "kind": "prompt"
+              }
+            }
+          ]
+        },
+        {
+          "id": "50e56c7d-c88b-42ab-bf88-567391f9e123",
+          "name": "动漫",
+          "type": "Multi",
+          "command": false,
+          "collapsed": false,
+          "choices": [
+            {
+              "id": "4eef5b73-c684-4394-8be0-56564d4ce812",
+              "name": "豆瓣导入动漫（导入后校正分类）",
+              "type": "Macro",
+              "command": false,
+              "onePageInput": "never",
+              "macro": {
+                "id": "0ce8a38b-1a2b-443e-8626-8b2d817c27ec",
+                "name": "豆瓣导入动漫",
+                "commands": [
+                  {
+                    "id": "94738474-3485-4377-bef3-c7647341e06f",
+                    "name": "豆瓣：搜索影视并创建文件",
+                    "type": "Obsidian",
+                    "commandId": "obsidian-douban-plugin:searcher-douban-import-and-create-file-movie-tv"
+                  }
+                ]
+              },
+              "runOnStartup": false
+            },
+            {
+              "id": "d70be85a-9e07-40ac-b932-3e7fd93f4dc7",
+              "name": "手动新增动漫",
+              "type": "Template",
+              "command": false,
+              "onePageInput": "always",
+              "templatePath": "媒体库/模板/手动/动漫.md",
+              "fileNameFormat": {
+                "enabled": true,
+                "format": "{{VALUE:标题}}（{{VALUE:发行年份|default:未知年份}}）"
+              },
+              "discoverExistingNotesBeforeCreate": true,
+              "folder": {
+                "enabled": true,
+                "folders": [
+                  "媒体库/作品"
+                ],
+                "chooseWhenCreatingNote": false,
+                "createInSameFolderAsActiveFile": false,
+                "chooseFromSubfolders": false
+              },
+              "appendLink": false,
+              "copyLinkToClipboard": false,
+              "openFile": true,
+              "fileOpening": {
+                "location": "tab",
+                "direction": "vertical",
+                "mode": "default",
+                "focus": true
+              },
+              "fileExistsBehavior": {
+                "kind": "prompt"
+              }
+            }
+          ]
+        },
+        {
+          "id": "2dc5c9ae-85bd-4c07-9108-daf6d17a08b1",
+          "name": "游戏",
+          "type": "Multi",
+          "command": false,
+          "collapsed": false,
+          "choices": [
+            {
+              "id": "13e8e660-4f19-4290-87f3-9e72bd457c98",
+              "name": "豆瓣导入游戏",
+              "type": "Macro",
+              "command": false,
+              "onePageInput": "never",
+              "macro": {
+                "id": "2958b57c-ab8f-4457-9574-b653144b8c37",
+                "name": "豆瓣导入游戏",
+                "commands": [
+                  {
+                    "id": "3eb0285b-2e76-46cb-a0b0-57124197cb01",
+                    "name": "豆瓣：搜索游戏并创建文件",
+                    "type": "Obsidian",
+                    "commandId": "obsidian-douban-plugin:searcher-douban-import-and-create-file-game"
+                  }
+                ]
+              },
+              "runOnStartup": false
+            },
+            {
+              "id": "9a5f98da-8bf5-401a-87f9-8b22660c9ed0",
+              "name": "手动新增游戏",
+              "type": "Template",
+              "command": false,
+              "onePageInput": "always",
+              "templatePath": "媒体库/模板/手动/游戏.md",
+              "fileNameFormat": {
+                "enabled": true,
+                "format": "{{VALUE:标题}}（{{VALUE:发行年份|default:未知年份}}）"
+              },
+              "discoverExistingNotesBeforeCreate": true,
+              "folder": {
+                "enabled": true,
+                "folders": [
+                  "媒体库/作品"
+                ],
+                "chooseWhenCreatingNote": false,
+                "createInSameFolderAsActiveFile": false,
+                "chooseFromSubfolders": false
+              },
+              "appendLink": false,
+              "copyLinkToClipboard": false,
+              "openFile": true,
+              "fileOpening": {
+                "location": "tab",
+                "direction": "vertical",
+                "mode": "default",
+                "focus": true
+              },
+              "fileExistsBehavior": {
+                "kind": "prompt"
+              }
+            }
+          ]
+        },
+        {
+          "id": "5c24e729-3af9-4686-b593-64b1f824ab7e",
+          "name": "新建合集",
+          "type": "Template",
+          "command": false,
+          "onePageInput": "always",
+          "templatePath": "媒体库/模板/手动/合集.md",
+          "fileNameFormat": {
+            "enabled": true,
+            "format": "{{VALUE:合集名称}}"
+          },
+          "discoverExistingNotesBeforeCreate": true,
+          "folder": {
+            "enabled": true,
+            "folders": [
+              "媒体库/合集"
+            ],
+            "chooseWhenCreatingNote": false,
+            "createInSameFolderAsActiveFile": false,
+            "chooseFromSubfolders": false
+          },
+          "appendLink": false,
+          "copyLinkToClipboard": false,
+          "openFile": true,
+          "fileOpening": {
+            "location": "tab",
+            "direction": "vertical",
+            "mode": "default",
+            "focus": true
+          },
+          "fileExistsBehavior": {
+            "kind": "prompt"
+          }
+        }
+      ]
+    }
+  ],
+  "inputPrompt": "single-line",
+  "persistInputPromptDrafts": true,
+  "useSelectionAsCaptureValue": true,
+  "searchNestedChoices": true,
+  "templateFolderLauncherRow": "bottom",
+  "devMode": false,
+  "templateFolderPaths": [
+    "媒体库/模板/手动"
+  ],
+  "announceUpdates": "major",
+  "version": "2.22.0",
+  "globalVariables": {},
+  "onePageInputEnabled": false,
+  "disableOnlineFeatures": true,
+  "enableUriCallbacks": false,
+  "enableRibbonIcon": false,
+  "showCaptureNotification": true,
+  "showInputCancellationNotification": false,
+  "enableTemplatePropertyTypes": false,
+  "dateAliases": {
+    "t": "today",
+    "tm": "tomorrow",
+    "yd": "yesterday",
+    "nw": "next week",
+    "nm": "next month",
+    "ny": "next year",
+    "lw": "last week",
+    "lm": "last month",
+    "ly": "last year"
+  },
+  "ai": {
+    "defaultModel": "Ask me",
+    "defaultSystemPrompt": "As an AI assistant within Obsidian, your primary goal is to help users manage their ideas and knowledge more effectively. Format your responses using Markdown syntax. Please use the [[Obsidian]] link format. You can write aliases for the links by writing [[Obsidian|the alias after the pipe symbol]]. To use mathematical notation, use LaTeX syntax. LaTeX syntax for larger equations should be on separate lines, surrounded with double dollar signs ($$). You can also inline math expressions by wrapping it in $ symbols. For example, use $$w_{ij}^{\\text{new}}:=w_{ij}^{\\text{current}}+\\eta\\cdot\\delta_j\\cdot x_{ij}$$ on a separate line, but you can write \"($\\eta$ = learning rate, $\\delta_j$ = error term, $x_{ij}$ = input)\" inline.",
+    "promptTemplatesFolderPath": "",
+    "showAssistant": true,
+    "providers": [
+      {
+        "id": "openai",
+        "name": "OpenAI",
+        "endpoint": "https://api.openai.com/v1",
+        "kind": "openai",
+        "apiKey": "",
+        "models": [
+          {
+            "name": "gpt-5.5",
+            "maxTokens": 1050000,
+            "maxOutputTokens": 128000,
+            "supportsTemperature": false
+          },
+          {
+            "name": "gpt-5.4",
+            "maxTokens": 1050000,
+            "maxOutputTokens": 128000,
+            "supportsTemperature": false
+          },
+          {
+            "name": "gpt-5.4-mini",
+            "maxTokens": 400000,
+            "maxOutputTokens": 128000,
+            "supportsTemperature": false
+          },
+          {
+            "name": "gpt-5.4-nano",
+            "maxTokens": 400000,
+            "maxOutputTokens": 128000,
+            "supportsTemperature": false
+          },
+          {
+            "name": "gpt-4.1",
+            "maxTokens": 1047576,
+            "maxOutputTokens": 32768,
+            "supportsTemperature": true
+          },
+          {
+            "name": "gpt-4.1-mini",
+            "maxTokens": 1047576,
+            "maxOutputTokens": 32768,
+            "supportsTemperature": true
+          },
+          {
+            "name": "gpt-4o",
+            "maxTokens": 128000,
+            "maxOutputTokens": 16384,
+            "supportsTemperature": true
+          },
+          {
+            "name": "gpt-4o-mini",
+            "maxTokens": 128000,
+            "maxOutputTokens": 16384,
+            "supportsTemperature": true
+          },
+          {
+            "name": "o3",
+            "maxTokens": 200000,
+            "maxOutputTokens": 100000,
+            "supportsTemperature": false
+          },
+          {
+            "name": "o4-mini",
+            "maxTokens": 200000,
+            "maxOutputTokens": 100000,
+            "supportsTemperature": false
+          }
+        ],
+        "autoSyncModels": true,
+        "modelSource": "modelsDev"
+      },
+      {
+        "id": "gemini",
+        "name": "Gemini",
+        "endpoint": "https://generativelanguage.googleapis.com",
+        "kind": "gemini",
+        "apiKey": "",
+        "models": [
+          {
+            "name": "gemini-3.5-flash",
+            "maxTokens": 1048576,
+            "maxOutputTokens": 65536,
+            "supportsTemperature": true
+          },
+          {
+            "name": "gemini-3.1-pro-preview",
+            "maxTokens": 1048576,
+            "maxOutputTokens": 65536,
+            "supportsTemperature": true
+          },
+          {
+            "name": "gemini-3.1-flash-lite",
+            "maxTokens": 1048576,
+            "maxOutputTokens": 65536,
+            "supportsTemperature": true
+          },
+          {
+            "name": "gemini-3-pro-preview",
+            "maxTokens": 1048576,
+            "maxOutputTokens": 65536,
+            "supportsTemperature": true
+          },
+          {
+            "name": "gemini-3-flash-preview",
+            "maxTokens": 1048576,
+            "maxOutputTokens": 65536,
+            "supportsTemperature": true
+          },
+          {
+            "name": "gemini-2.5-pro",
+            "maxTokens": 1048576,
+            "maxOutputTokens": 65536,
+            "supportsTemperature": true
+          },
+          {
+            "name": "gemini-2.5-flash",
+            "maxTokens": 1048576,
+            "maxOutputTokens": 65536,
+            "supportsTemperature": true
+          },
+          {
+            "name": "gemini-2.5-flash-lite",
+            "maxTokens": 1048576,
+            "maxOutputTokens": 65536,
+            "supportsTemperature": true
+          }
+        ],
+        "autoSyncModels": true,
+        "modelSource": "modelsDev"
+      }
+    ],
+    "confirmToolCalls": "destructive"
+  },
+  "migrations": {
+    "migrateToMacroIDFromEmbeddedMacro": true,
+    "useQuickAddTemplateFolder": true,
+    "incrementFileNameSettingMoveToDefaultBehavior": true,
+    "consolidateFileExistsBehavior": true,
+    "repairTemplateFileExistsBehavior": true,
+    "mutualExclusionInsertAfterAndWriteToBottomOfFile": true,
+    "setVersionAfterUpdateModalRelease": true,
+    "addDefaultAIProviders": true,
+    "removeMacroIndirection": true,
+    "migrateFileOpeningSettings": true,
+    "backfillFileOpeningDefaults": true,
+    "setProviderModelDiscoveryMode": true,
+    "migrateProviderApiKeysToSecretStorage": true,
+    "migrateToMultipleTemplateFolders": true,
+    "refreshStaleDefaultModelSeeds": true,
+    "pinAiModelRefs": true
+  }
+}

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 600 900">
+  <rect width="600" height="900" fill="#c8d6d4"/><path d="M0 680Q150 560 300 680T600 680V900H0Z" fill="#5e8178"/><path d="M0 720Q150 620 300 730T600 720V900H0Z" fill="#365b5a"/>
+  <path d="M420 260l90 80-90 80-90-80z" fill="#df6e58"/><path d="M420 420q-30 120-160 190t-100 170" fill="none" stroke="#a44b43" stroke-width="5"/>
+  <g stroke="#fff" stroke-width="4" opacity=".65"><path d="M60 250l-35 90M140 220l-35 90M220 250l-35 90M300 220l-35 90"/></g>
+  <text x="45" y="100" fill="#27494c" font-size="24" letter-spacing="6">KITE IN MONSOON</text><text x="45" y="190" fill="#203d3e" font-size="68" font-family="serif">风筝与雨季</text>
+</svg>

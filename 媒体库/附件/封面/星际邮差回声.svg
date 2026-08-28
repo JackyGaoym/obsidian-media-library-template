@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 600 900">
+  <rect width="600" height="900" fill="#10152d"/><path d="M70 0v900M150 0v900M230 0v900M310 0v900M390 0v900M470 0v900M550 0v900" stroke="#3ce0c1" stroke-width="2" opacity=".18"/>
+  <circle cx="300" cy="500" r="210" fill="none" stroke="#54e6c2" stroke-width="4" opacity=".3"/><circle cx="300" cy="500" r="145" fill="none" stroke="#54e6c2" stroke-width="8" opacity=".55"/><circle cx="300" cy="500" r="70" fill="#ff8a62"/>
+  <path d="M285 380h30v240h-30zM180 485h240v30H180z" fill="#f2f7ef" opacity=".9"/>
+  <text x="46" y="100" fill="#54e6c2" font-size="24" letter-spacing="6">ECHO PROTOCOL</text><text x="46" y="180" fill="#fff" font-size="62" font-family="serif">星际邮差</text><text x="46" y="245" fill="#ff8a62" font-size="54">回声</text>
+</svg>

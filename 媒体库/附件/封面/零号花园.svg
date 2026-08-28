@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 600 900">
+  <rect width="600" height="900" fill="#101d18"/><circle cx="300" cy="510" r="230" fill="#16392d"/><g fill="none" stroke="#78d39a" stroke-width="5"><path d="M300 720V420M300 500q-100-90-160-30M300 570q110-120 190-55"/></g>
+  <g fill="#f2c85b"><circle cx="140" cy="470" r="35"/><circle cx="490" cy="515" r="42"/><circle cx="300" cy="400" r="48"/></g><g fill="#e76e67"><circle cx="140" cy="470" r="10"/><circle cx="490" cy="515" r="12"/><circle cx="300" cy="400" r="14"/></g>
+  <text x="48" y="105" fill="#78d39a" font-size="25" letter-spacing="7">GARDEN ZERO</text><text x="48" y="195" fill="#fff" font-size="76" font-family="serif">零号花园</text><text x="50" y="245" fill="#a7c9b3" font-size="23">RESTORE LIFE ON A SILENT WORLD</text>
+</svg>

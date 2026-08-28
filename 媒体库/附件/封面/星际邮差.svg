@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 600 900">
+  <defs><radialGradient id="g"><stop stop-color="#3b4d98"/><stop offset="1" stop-color="#090d22"/></radialGradient></defs>
+  <rect width="600" height="900" fill="url(#g)"/><g fill="#fff" opacity=".7"><circle cx="90" cy="150" r="3"/><circle cx="480" cy="90" r="4"/><circle cx="520" cy="320" r="2"/><circle cx="180" cy="390" r="3"/><circle cx="420" cy="620" r="4"/></g>
+  <ellipse cx="300" cy="600" rx="250" ry="85" fill="none" stroke="#ee8c66" stroke-width="12" transform="rotate(-18 300 600)"/><circle cx="300" cy="600" r="115" fill="#e8b365"/><rect x="210" y="455" width="180" height="120" rx="12" fill="#f3eee5" transform="rotate(-8 300 515)"/><path d="M220 470 300 525 380 470" fill="none" stroke="#d46b5a" stroke-width="10"/>
+  <text x="48" y="110" fill="#fff" font-size="25" letter-spacing="7">INTERSTELLAR MAIL</text><text x="48" y="195" fill="#fff" font-size="76" font-family="serif">星际邮差</text>
+</svg>
