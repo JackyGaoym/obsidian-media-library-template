@@ -28,7 +28,6 @@
     "directors": "multitext",
     "screenwriters": "multitext",
     "cast": "multitext",
-    "aliases": "aliases",
     "publisher": "text",
     "developer": "text",
     "format": "text",

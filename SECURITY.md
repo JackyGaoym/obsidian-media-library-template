@@ -10,7 +10,9 @@
 
 ```bash
 rg -n -i \
+  --hidden \
   'cookie|authorization|bearer|api[_-]?key|access[_-]?token|refresh[_-]?token|password|secret|/Users/|C:\\\\Users\\\\|file://' \
+  -g '!.git/**' \
   -g '!README.md' -g '!SECURITY.md' -g '!THIRD_PARTY.md'
 ```
 
