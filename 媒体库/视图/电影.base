@@ -6,6 +6,7 @@ filters:
 formulas:
   year: if(release_date, release_date.toString().slice(0, 4), "未知")
   rating_label: if(rating, rating.toString() + " ★", "未评分")
+  progress_label: if(status == "进行中", if(current_minutes, current_minutes.toString(), "0") + " / " + if(runtime_minutes, runtime_minutes.toString().replace("分钟", ""), "?") + " 分", "")
 properties:
   title:
     displayName: 电影名
@@ -19,6 +20,8 @@ properties:
     displayName: 状态
   formula.rating_label:
     displayName: 我的评分
+  formula.progress_label:
+    displayName: 进度
 views:
   - type: cards
     name: 全部
@@ -58,10 +61,11 @@ views:
         - status == "进行中"
     order:
       - title
+      - formula.progress_label
       - formula.rating_label
       - runtime_minutes
     sort:
-      - property: started_at
+      - property: file.mtime
         direction: DESC
     image: cover
     imageFit: contain
@@ -75,9 +79,8 @@ views:
     order:
       - title
       - formula.rating_label
-      - finished_at
     sort:
-      - property: finished_at
+      - property: file.mtime
         direction: DESC
     image: cover
     imageFit: contain
@@ -107,6 +110,7 @@ views:
       - genres
       - release_date
       - runtime_minutes
+      - current_minutes
       - status
       - rating
       - favorite

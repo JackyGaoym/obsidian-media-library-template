@@ -5,7 +5,7 @@ filters:
 formulas:
   type_label: if(media_type == "book", "图书", if(media_type == "tv", "电视剧", if(media_type == "movie", "电影", if(media_type == "anime", "动漫", "游戏"))))
   rating_label: if(rating, rating.toString() + " ★", "未评分")
-  progress_label: if(media_type == "book" && status == "进行中", current_page.toString() + " / " + if(page_count, page_count.toString(), "?") + " 页", if((media_type == "tv" || media_type == "anime") && status == "进行中", current_episode.toString() + " / " + if(episode_count, episode_count.toString(), "?") + " 集", if(media_type == "game" && status == "进行中", progress_percent.toString() + "%", "")))
+  progress_label: if(media_type == "book" && status == "进行中", current_page.toString() + " / " + if(page_count, page_count.toString(), "?") + " 页", if((media_type == "tv" || media_type == "anime") && status == "进行中", current_episode.toString() + " / " + if(episode_count, episode_count.toString(), "?") + " 集", if(media_type == "movie" && status == "进行中", if(current_minutes, current_minutes.toString(), "0") + " / " + if(runtime_minutes, runtime_minutes.toString().replace("分钟", ""), "?") + " 分", if(media_type == "game" && status == "进行中", progress_percent.toString() + "%", ""))))
 views:
   - type: cards
     name: 最近加入
@@ -32,7 +32,7 @@ views:
       - formula.progress_label
       - formula.rating_label
     sort:
-      - property: started_at
+      - property: file.mtime
         direction: DESC
       - property: added_at
         direction: DESC

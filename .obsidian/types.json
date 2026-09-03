@@ -14,8 +14,6 @@
     "rating": "number",
     "favorite": "checkbox",
     "added_at": "date",
-    "started_at": "date",
-    "finished_at": "date",
     "series": "text",
     "sequence": "number",
     "collections": "multitext",
@@ -45,6 +43,7 @@
     "season_count": "number",
     "current_episode": "number",
     "runtime_minutes": "number",
+    "current_minutes": "number",
     "progress_percent": "number",
     "collection_kind": "text",
     "created_at": "date"
