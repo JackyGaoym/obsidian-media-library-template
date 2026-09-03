@@ -9,7 +9,8 @@ const typeMeta = {
     subtitle: "书名、作者、类型、出版时间、封面与阅读进度。",
     pending: "待阅读",
     active: "阅读中",
-    add: "新增图书"
+    add: "新增图书",
+    quickAddChoiceId: "2dc58115-8a58-4f8c-bde0-955aa536f301"
   },
   电视剧: {
     type: "tv",
@@ -18,16 +19,18 @@ const typeMeta = {
     subtitle: "剧名、首播时间、类型、集数、海报与追剧进度。",
     pending: "待观看",
     active: "追剧中",
-    add: "新增电视剧"
+    add: "新增电视剧",
+    quickAddChoiceId: "e2631a3e-a7c7-4af4-9738-940633b4886e"
   },
   电影: {
     type: "movie",
     label: "电影",
     unit: "部",
-    subtitle: "电影名、上映时间、类型、时长、海报与个人评分。",
+    subtitle: "电影名、上映时间、类型、时长、海报与观看进度。",
     pending: "待观看",
     active: "观看中",
-    add: "新增电影"
+    add: "新增电影",
+    quickAddChoiceId: "33231650-d582-48a1-900f-085e860da8e4"
   },
   动漫: {
     type: "anime",
@@ -36,7 +39,8 @@ const typeMeta = {
     subtitle: "动漫名、首播时间、类型、集数、海报与追番进度。",
     pending: "待观看",
     active: "追番中",
-    add: "新增动漫"
+    add: "新增动漫",
+    quickAddChoiceId: "50e56c7d-c88b-42ab-bf88-567391f9e123"
   },
   游戏: {
     type: "game",
@@ -45,7 +49,8 @@ const typeMeta = {
     subtitle: "游戏名、类型、平台、封面、开发商与完成进度。",
     pending: "待游玩",
     active: "游玩中",
-    add: "新增游戏"
+    add: "新增游戏",
+    quickAddChoiceId: "2dc5c9ae-85bd-4c07-9108-daf6d17a08b1"
   }
 };
 
@@ -75,6 +80,12 @@ const timestamp = value => {
   return Number.isNaN(parsed) ? 0 : parsed;
 };
 
+const numberFrom = value => {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  const match = String(value ?? "").replaceAll(",", "").match(/\d+(?:\.\d+)?/);
+  return match ? Number(match[0]) : 0;
+};
+
 const yearFor = page => {
   if (!page.release_date) return "未知年份";
   if (typeof page.release_date.toFormat === "function") return page.release_date.toFormat("yyyy");
@@ -93,26 +104,37 @@ const coverUrl = page => {
 
 const progressFor = page => {
   if (meta.type === "book") {
-    const currentPage = Number(page.current_page || 0);
-    const total = Number(page.page_count || 0);
+    const currentPage = numberFrom(page.current_page);
+    const total = numberFrom(page.page_count);
     return {
       percent: total > 0 ? Math.min(100, currentPage / total * 100) : 0,
-      label: `${currentPage} / ${total || "?"} 页`
+      label: `${currentPage} / ${total || "?"} 页`,
+      known: total > 0
     };
   }
   if (meta.type === "tv" || meta.type === "anime") {
-    const currentEpisode = Number(page.current_episode || 0);
-    const total = Number(page.episode_count || 0);
+    const currentEpisode = numberFrom(page.current_episode);
+    const total = numberFrom(page.episode_count);
     return {
       percent: total > 0 ? Math.min(100, currentEpisode / total * 100) : 0,
-      label: `${currentEpisode} / ${total || "?"} 集`
+      label: `${currentEpisode} / ${total || "?"} 集`,
+      known: total > 0
+    };
+  }
+  if (meta.type === "movie") {
+    const currentMinutes = numberFrom(page.current_minutes);
+    const total = numberFrom(page.runtime_minutes);
+    return {
+      percent: total > 0 ? Math.min(100, currentMinutes / total * 100) : 0,
+      label: `${currentMinutes} / ${total || "?"} 分`,
+      known: total > 0
     };
   }
   if (meta.type === "game") {
-    const percent = Math.max(0, Math.min(100, Number(page.progress_percent || 0)));
-    return { percent, label: `${percent}%` };
+    const percent = Math.max(0, Math.min(100, numberFrom(page.progress_percent)));
+    return { percent, label: `${percent}%`, known: true };
   }
-  return { percent: 0, label: "" };
+  return { percent: 0, label: "", known: false };
 };
 
 const addInternalLink = (parent, path, text, cls = "") => {
@@ -161,7 +183,7 @@ const addIcon = addButton.createSpan({ cls: "media-category-add-icon" });
 setAppIcon(addIcon, "plus");
 addButton.createSpan({ text: meta.add });
 addButton.addEventListener("click", () => {
-  app.commands.executeCommandById("quickadd:choice:a8f3f962-2f97-4b42-86fb-8c8e3571d9e0");
+  app.commands.executeCommandById(`quickadd:choice:${meta.quickAddChoiceId}`);
 });
 
 const toolbar = root.createDiv({ cls: "media-category-toolbar" });
@@ -268,6 +290,7 @@ const renderCard = page => {
     if (progress.label) {
       const progressRow = copy.createDiv({ cls: "media-category-progress" });
       const track = progressRow.createDiv({ cls: "media-category-progress-track" });
+      track.toggleClass("is-unknown", !progress.known);
       const fill = track.createDiv({ cls: "media-category-progress-fill" });
       fill.style.width = `${progress.percent}%`;
       progressRow.createSpan({ cls: "media-category-progress-label", text: progress.label });

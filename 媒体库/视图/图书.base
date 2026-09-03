@@ -65,7 +65,7 @@ views:
       - formula.progress_label
       - formula.rating_label
     sort:
-      - property: started_at
+      - property: file.mtime
         direction: DESC
     image: cover
     imageFit: contain
@@ -80,9 +80,8 @@ views:
       - title
       - authors
       - formula.rating_label
-      - finished_at
     sort:
-      - property: finished_at
+      - property: file.mtime
         direction: DESC
     image: cover
     imageFit: contain

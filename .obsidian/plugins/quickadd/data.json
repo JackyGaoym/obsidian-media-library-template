@@ -12,7 +12,7 @@
           "id": "2dc58115-8a58-4f8c-bde0-955aa536f301",
           "name": "图书",
           "type": "Multi",
-          "command": false,
+          "command": true,
           "collapsed": false,
           "choices": [
             {
@@ -41,7 +41,7 @@
               "type": "Template",
               "command": false,
               "onePageInput": "always",
-              "templatePath": "媒体库/模板/手动/图书.md",
+              "templatePath": "媒体库/模板/手动/手动新增图书.md",
               "fileNameFormat": {
                 "enabled": true,
                 "format": "{{VALUE:标题}}（{{VALUE:发行年份|default:未知年份}}）"
@@ -75,7 +75,7 @@
           "id": "e2631a3e-a7c7-4af4-9738-940633b4886e",
           "name": "电视剧",
           "type": "Multi",
-          "command": false,
+          "command": true,
           "collapsed": false,
           "choices": [
             {
@@ -104,7 +104,7 @@
               "type": "Template",
               "command": false,
               "onePageInput": "always",
-              "templatePath": "媒体库/模板/手动/电视剧.md",
+              "templatePath": "媒体库/模板/手动/手动新增电视剧.md",
               "fileNameFormat": {
                 "enabled": true,
                 "format": "{{VALUE:标题}}（{{VALUE:发行年份|default:未知年份}}）"
@@ -138,7 +138,7 @@
           "id": "33231650-d582-48a1-900f-085e860da8e4",
           "name": "电影",
           "type": "Multi",
-          "command": false,
+          "command": true,
           "collapsed": false,
           "choices": [
             {
@@ -167,7 +167,7 @@
               "type": "Template",
               "command": false,
               "onePageInput": "always",
-              "templatePath": "媒体库/模板/手动/电影.md",
+              "templatePath": "媒体库/模板/手动/手动新增电影.md",
               "fileNameFormat": {
                 "enabled": true,
                 "format": "{{VALUE:标题}}（{{VALUE:发行年份|default:未知年份}}）"
@@ -201,7 +201,7 @@
           "id": "50e56c7d-c88b-42ab-bf88-567391f9e123",
           "name": "动漫",
           "type": "Multi",
-          "command": false,
+          "command": true,
           "collapsed": false,
           "choices": [
             {
@@ -230,7 +230,7 @@
               "type": "Template",
               "command": false,
               "onePageInput": "always",
-              "templatePath": "媒体库/模板/手动/动漫.md",
+              "templatePath": "媒体库/模板/手动/手动新增动漫.md",
               "fileNameFormat": {
                 "enabled": true,
                 "format": "{{VALUE:标题}}（{{VALUE:发行年份|default:未知年份}}）"
@@ -264,7 +264,7 @@
           "id": "2dc5c9ae-85bd-4c07-9108-daf6d17a08b1",
           "name": "游戏",
           "type": "Multi",
-          "command": false,
+          "command": true,
           "collapsed": false,
           "choices": [
             {
@@ -293,7 +293,7 @@
               "type": "Template",
               "command": false,
               "onePageInput": "always",
-              "templatePath": "媒体库/模板/手动/游戏.md",
+              "templatePath": "媒体库/模板/手动/手动新增游戏.md",
               "fileNameFormat": {
                 "enabled": true,
                 "format": "{{VALUE:标题}}（{{VALUE:发行年份|default:未知年份}}）"

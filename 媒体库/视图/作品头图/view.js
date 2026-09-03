@@ -177,14 +177,48 @@ if (credits.length) info.createDiv({ cls: "media-work-credits", text: credits.jo
 
 const mediaFile = app.vault.getAbstractFileByPath(page.file.path);
 
-const writeField = async (field, value) => {
+const writeFields = async values => {
   if (!mediaFile) return;
   await app.fileManager.processFrontMatter(mediaFile, frontmatter => {
-    frontmatter[field] = value;
+    for (const [field, value] of Object.entries(values)) frontmatter[field] = value;
   });
 };
 
+const writeField = async (field, value) => writeFields({ [field]: value });
+
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+const numberFrom = value => {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  const match = String(value ?? "").replaceAll(",", "").match(/\d+(?:\.\d+)?/);
+  return match ? Number(match[0]) : 0;
+};
+
+const setAppIcon = (element, name, fallback) => {
+  element.empty();
+  try {
+    const iconSetter = typeof setIcon === "function"
+      ? setIcon
+      : (typeof require === "function" ? require("obsidian").setIcon : null);
+    if (iconSetter) {
+      iconSetter(element, name);
+      return;
+    }
+  } catch (error) {
+  }
+  element.setText(fallback);
+};
+
+const showNotice = message => {
+  try {
+    const NoticeClass = typeof Notice === "function"
+      ? Notice
+      : (typeof require === "function" ? require("obsidian").Notice : null);
+    if (NoticeClass) new NoticeClass(message);
+  } catch (error) {
+    console.error(message, error);
+  }
+};
 
 const mountRating = host => {
   host.empty();
@@ -287,60 +321,138 @@ const mountProgress = host => {
   host.empty();
   host.addClass("is-ready");
 
-  let savedProgress = typeof page.progress_percent === "number" ? clamp(Math.round(page.progress_percent / 5) * 5, 0, 100) : 0;
-  const trackWrap = host.createDiv({ cls: "media-progress-track-wrap" });
-  const track = trackWrap.createDiv({ cls: "media-progress-track" });
-  const fill = track.createDiv({ cls: "media-progress-fill" });
-  const input = trackWrap.createEl("input", {
-    cls: "media-progress-range",
+  const configs = {
+    book: { field: "current_page", totalField: "page_count", unit: "页", step: 1 },
+    tv: { field: "current_episode", totalField: "episode_count", unit: "集", step: 1 },
+    movie: { field: "current_minutes", totalField: "runtime_minutes", unit: "分", step: 10 },
+    anime: { field: "current_episode", totalField: "episode_count", unit: "集", step: 1 },
+    game: { field: "progress_percent", totalField: null, unit: "%", step: 5, fixedTotal: 100 }
+  };
+  const config = configs[page.media_type];
+  if (!config) {
+    host.remove();
+    return;
+  }
+
+  const total = config.fixedTotal ?? Math.max(0, Math.round(numberFrom(page[config.totalField])));
+  const hasTotal = total > 0;
+  let savedProgress = Math.max(0, Math.round(numberFrom(page[config.field])));
+  if (hasTotal) savedProgress = Math.min(savedProgress, total);
+  let currentStatus = page.status;
+  let statusControl = null;
+
+  const label = host.previousElementSibling;
+  if (label?.tagName === "STRONG") {
+    label.addClass("media-progress-label");
+    const row = document.createElement("span");
+    row.className = "media-progress-row";
+    label.parentNode.insertBefore(row, label);
+    row.append(label, host);
+  }
+
+  const decrement = host.createEl("button", {
+    cls: "media-progress-step clickable-icon",
+    attr: { type: "button", "aria-label": `减少 ${config.step} ${config.unit}` }
+  });
+  setAppIcon(decrement, "minus", "−");
+
+  const input = host.createEl("input", {
+    cls: "media-progress-number",
     attr: {
-      type: "range",
+      type: "number",
       min: "0",
-      max: "100",
-      step: "5",
+      step: String(config.step),
       value: String(savedProgress),
-      "aria-label": "游戏进度"
+      inputmode: "numeric",
+      "aria-label": "当前进度"
     }
   });
-  const bubble = trackWrap.createDiv({ cls: "media-progress-bubble", attr: { "aria-hidden": "true" } });
+  if (hasTotal) input.setAttr("max", String(total));
+
+  const suffix = host.createSpan({
+    cls: "media-progress-suffix",
+    text: config.unit === "%" ? "%" : `/ ${hasTotal ? total : "?"} ${config.unit}`
+  });
+
+  const increment = host.createEl("button", {
+    cls: "media-progress-step clickable-icon",
+    attr: { type: "button", "aria-label": `增加 ${config.step} ${config.unit}` }
+  });
+  setAppIcon(increment, "plus", "+");
+
+  const track = host.createSpan({ cls: `media-progress-track${hasTotal ? "" : " is-unknown"}` });
+  const fill = track.createSpan({ cls: "media-progress-fill" });
   const output = host.createEl("output", { cls: "media-progress-output" });
-  let hideTimer;
+  const hint = host.createSpan({
+    cls: "media-progress-hint",
+    text: hasTotal
+      ? "状态设为已完成会补满进度；从满值减少会恢复为进行中"
+      : `缺少总${config.unit === "页" ? "页数" : config.unit === "集" ? "集数" : "时长"}，暂时无法自动补满`
+  });
 
   const render = value => {
-    const progress = clamp(Number(value) || 0, 0, 100);
-    host.style.setProperty("--media-progress", `${progress}%`);
-    fill.style.width = `${progress}%`;
-    bubble.setText(`${progress}%`);
-    output.setText(`${progress}%`);
-    input.setAttr("aria-valuetext", `${progress}%`);
+    const current = hasTotal
+      ? clamp(Math.round(Number(value) || 0), 0, total)
+      : Math.max(0, Math.round(Number(value) || 0));
+    const percent = hasTotal ? clamp(current / total * 100, 0, 100) : 0;
+    input.value = String(current);
+    fill.style.width = `${percent}%`;
+    output.setText(hasTotal ? `${Math.round(percent)}%` : "—");
+    decrement.disabled = current <= 0;
+    increment.disabled = hasTotal && current >= total;
+    return current;
   };
 
-  const showBubble = () => {
-    window.clearTimeout(hideTimer);
-    host.addClass("is-adjusting");
+  const commit = async value => {
+    const next = render(value);
+    if (next === savedProgress) return;
+    savedProgress = next;
+    const updates = { [config.field]: savedProgress };
+    const shouldResume = hasTotal && savedProgress < total && currentStatus === "已完成";
+    if (shouldResume) {
+      currentStatus = "进行中";
+      updates.status = currentStatus;
+      if (statusControl) statusControl.value = currentStatus;
+    }
+    await writeFields(updates);
+    if (shouldResume) showNotice("进度未满，状态已恢复为进行中");
   };
 
-  const hideBubble = () => {
-    window.clearTimeout(hideTimer);
-    hideTimer = window.setTimeout(() => host.removeClass("is-adjusting"), 500);
-  };
-
-  input.addEventListener("pointerdown", showBubble);
-  input.addEventListener("focus", showBubble);
-  input.addEventListener("input", () => {
-    showBubble();
-    render(input.value);
+  decrement.addEventListener("click", () => void commit(savedProgress - config.step));
+  increment.addEventListener("click", () => void commit(savedProgress + config.step));
+  input.addEventListener("input", () => render(input.value));
+  input.addEventListener("change", () => void commit(input.value));
+  input.addEventListener("blur", () => void commit(input.value));
+  input.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      input.blur();
+    }
   });
-  input.addEventListener("change", () => {
-    savedProgress = clamp(Number(input.value) || 0, 0, 100);
-    render(savedProgress);
-    void writeField("progress_percent", savedProgress);
-    hideBubble();
-  });
-  input.addEventListener("pointerup", hideBubble);
-  input.addEventListener("blur", hideBubble);
+
+  const attachCompletionSync = () => {
+    const callout = host.closest('.callout[data-callout="media-control"]');
+    const statusSelect = Array.from(callout?.querySelectorAll("select") || []).find(select =>
+      Array.from(select.options || []).some(option => option.value === "已完成"));
+    if (!statusSelect || statusSelect.dataset.mediaProgressSync === "true") return false;
+    statusControl = statusSelect;
+    currentStatus = statusSelect.value || currentStatus;
+    statusSelect.dataset.mediaProgressSync = "true";
+    statusSelect.addEventListener("change", () => {
+      currentStatus = statusSelect.value;
+      if (statusSelect.value !== "已完成") return;
+      if (!hasTotal) {
+        showNotice(`缺少总${config.unit === "页" ? "页数" : config.unit === "集" ? "集数" : "时长"}，无法自动补满进度`);
+        return;
+      }
+      window.setTimeout(() => void commit(total), 80);
+    });
+    return true;
+  };
 
   render(savedProgress);
+  if (!attachCompletionSync()) window.setTimeout(attachCompletionSync, 180);
+  if (page.status === "已完成" && hasTotal && savedProgress < total) void commit(total);
 };
 
 const mountInteractiveControls = () => {
