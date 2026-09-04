@@ -571,9 +571,9 @@
 .media-home-progress-controls {
   display: grid;
   width: max-content;
-  grid-template-columns: 28px 12ch 36px;
+  grid-template-columns: 28px 10ch 36px;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   font-size: 11px;
 }
 
@@ -617,8 +617,8 @@
 
 .media-home-progress-value {
   overflow: hidden;
-  width: 12ch;
-  padding: 0 2px;
+  width: 10ch;
+  padding: 0;
   border: 1px solid transparent;
   border-radius: 6px;
   background: transparent !important;
@@ -629,6 +629,11 @@
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.media-home-progress-value.is-long {
+  font-size: 10px;
+  letter-spacing: -0.04em;
 }
 
 .media-home-progress-action.is-complete {
@@ -662,14 +667,18 @@
 
   .media-home-progress-controls {
     width: max-content;
-    grid-template-columns: 26px 12ch 30px;
-    gap: 4px;
+    grid-template-columns: 26px 10ch 30px;
+    gap: 2px;
     font-size: 10px;
   }
 
   .media-home-progress-value {
-    width: 12ch;
+    width: 10ch;
     font-size: 10px;
+  }
+
+  .media-home-progress-value.is-long {
+    font-size: 9px;
   }
 
   .media-home-progress-action.is-complete {
