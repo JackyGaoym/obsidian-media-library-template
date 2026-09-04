@@ -541,9 +541,9 @@
 
 .media-home-progress-row {
   display: grid;
-  grid-template-columns: minmax(56px, 1fr) 176px;
+  grid-template-columns: minmax(72px, 1fr) max-content;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   margin-top: 11px;
 }
 
@@ -570,10 +570,11 @@
 
 .media-home-progress-controls {
   display: grid;
-  width: 176px;
-  grid-template-columns: 34px 76px 54px;
+  width: max-content;
+  grid-template-columns: 28px 12ch 36px;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  font-size: 11px;
 }
 
 .media-home-progress-controls button {
@@ -616,7 +617,7 @@
 
 .media-home-progress-value {
   overflow: hidden;
-  width: 76px;
+  width: 12ch;
   padding: 0 2px;
   border: 1px solid transparent;
   border-radius: 6px;
@@ -624,6 +625,7 @@
   color: var(--text-normal) !important;
   font-size: 11px;
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -634,7 +636,7 @@
   height: 28px;
   border-color: color-mix(in srgb, var(--color-green) 72%, transparent);
   color: color-mix(in srgb, var(--color-green) 82%, white) !important;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 650;
 }
 
@@ -654,23 +656,24 @@
   }
 
   .media-home-progress-row {
-    grid-template-columns: minmax(24px, 1fr) 146px;
-    gap: 8px;
-  }
-
-  .media-home-progress-controls {
-    width: 146px;
-    grid-template-columns: 30px 62px 42px;
+    grid-template-columns: minmax(56px, 1fr) max-content;
     gap: 6px;
   }
 
+  .media-home-progress-controls {
+    width: max-content;
+    grid-template-columns: 26px 12ch 30px;
+    gap: 4px;
+    font-size: 10px;
+  }
+
   .media-home-progress-value {
-    width: 62px;
+    width: 12ch;
     font-size: 10px;
   }
 
   .media-home-progress-action.is-complete {
-    font-size: 10px;
+    font-size: 9px;
   }
 
   .media-home-progress-button:not(.is-complete) {
