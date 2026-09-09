@@ -18,6 +18,10 @@ properties:
     displayName: 发行时间
   status:
     displayName: 状态
+  started_at:
+    displayName: 开始游玩
+  finished_at:
+    displayName: 通关日期
   formula.rating_label:
     displayName: 我的评分
   formula.progress_label:
@@ -115,6 +119,8 @@ views:
       - release_date
       - progress_percent
       - status
+      - started_at
+      - finished_at
       - rating
       - favorite
       - series

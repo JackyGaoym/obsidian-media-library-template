@@ -8,27 +8,27 @@
   --media-muted: var(--text-muted);
 }
 
-/* Homepage: dark private-archive direction selected from visual concept 3. */
+/* Homepage: softened blue-charcoal archive palette for clearer dark-mode depth. */
 .media-library-home {
-  --background-primary: #0d0f12;
-  --background-primary-alt: #111318;
-  --background-secondary: #15181d;
-  --background-secondary-alt: #191c22;
-  --background-modifier-border: #292d35;
-  --background-modifier-border-hover: #3b404a;
-  --background-modifier-hover: #1b1f25;
-  --background-modifier-active-hover: #222731;
+  --background-primary: #12161b;
+  --background-primary-alt: #161b21;
+  --background-secondary: #1a2027;
+  --background-secondary-alt: #202730;
+  --background-modifier-border: #303946;
+  --background-modifier-border-hover: #424c5a;
+  --background-modifier-hover: #222932;
+  --background-modifier-active-hover: #29323d;
   --background-modifier-box-shadow: #000000;
-  --text-normal: #eceef2;
-  --text-muted: #979ca7;
-  --text-faint: #686e79;
+  --text-normal: #e2e6eb;
+  --text-muted: #a0a8b3;
+  --text-faint: #78818d;
   --text-accent: #a895ff;
   --text-accent-hover: #bdadff;
   --interactive-accent: #6657dd;
   --interactive-accent-hover: #7567e8;
-  --media-card-border: #292d35;
-  --media-card-bg: #15181d;
-  --media-muted: #979ca7;
+  --media-card-border: #303946;
+  --media-card-bg: #1a2027;
+  --media-muted: #a0a8b3;
   color: var(--text-normal);
   background: var(--background-primary);
   color-scheme: dark;
@@ -1849,6 +1849,95 @@
   line-height: 1.35;
 }
 
+.media-library-note .media-date-row {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  margin-top: 13px;
+  padding-top: 14px;
+  border-top: 1px solid color-mix(in srgb, var(--media-card-border) 72%, transparent);
+}
+
+.media-library-note .media-date-row-label,
+.media-library-note .media-date-field-label {
+  color: var(--media-muted);
+  font-size: var(--font-ui-smaller);
+  font-weight: 620;
+  letter-spacing: 0.02em;
+}
+
+.media-library-note .media-date-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 22px;
+}
+
+.media-library-note .media-date-field {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: max-content 138px 26px;
+  align-items: center;
+  gap: 8px;
+}
+
+.media-library-note .media-date-input {
+  box-sizing: border-box;
+  width: 138px;
+  min-width: 138px;
+  min-height: 34px;
+  height: 34px;
+  margin: 0;
+  padding: 4px 8px;
+  border: 1px solid color-mix(in srgb, var(--media-card-border) 88%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--background-secondary) 32%, transparent);
+  color: var(--text-normal);
+  font: inherit;
+  font-size: var(--font-ui-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.media-library-note .media-date-input:is(:hover, :focus) {
+  border-color: color-mix(in srgb, var(--media-type-color, var(--interactive-accent)) 62%, var(--media-card-border));
+  outline: 0;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--media-type-color, var(--interactive-accent)) 14%, transparent);
+}
+
+.media-library-note .media-date-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.66;
+}
+
+.media-library-note .media-date-clear {
+  width: 26px;
+  min-width: 26px;
+  min-height: 26px !important;
+  height: 26px;
+  padding: 6px;
+  color: var(--text-muted);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 100ms ease, color 100ms ease;
+}
+
+.media-library-note .media-date-clear.is-visible {
+  opacity: 0.68;
+  pointer-events: auto;
+}
+
+.media-library-note .media-date-clear.is-visible:hover {
+  color: var(--text-normal);
+  opacity: 1;
+}
+
+.media-library-note .media-date-clear svg {
+  width: 13px;
+  height: 13px;
+}
+
 .media-library-note .callout[data-callout="media-control"] .mb-input-wrapper select:hover,
 .media-library-note .callout[data-callout="media-control"] .mb-input-wrapper input[type="number"]:hover {
   border-color: color-mix(in srgb, var(--interactive-accent) 36%, var(--media-card-border));
@@ -3169,6 +3258,21 @@
   .media-library-note .media-progress-output {
     grid-column: 6;
   }
+
+  .media-library-note .media-date-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .media-library-note .media-date-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  .media-library-note .media-date-field {
+    grid-template-columns: 82px minmax(0, 138px) 26px;
+  }
 }
 
 /* Keep media-library page previews compact and prevent the preview content
@@ -4064,6 +4168,10 @@
   color: var(--text-faint);
 }
 
+.media-collection-index-mobile-back {
+  display: none;
+}
+
 @media (max-width: 900px) {
   .media-collection-index-app {
     grid-template-columns: 216px minmax(0, 1fr);
@@ -4120,7 +4228,59 @@
   }
 
   .media-collection-index-panel {
+    display: none;
     overflow: visible;
+  }
+
+  .media-collection-index-app.is-mobile-detail .media-collection-index-sidebar {
+    display: none;
+  }
+
+  .media-collection-index-app.is-mobile-detail .media-collection-index-panel {
+    display: block;
+  }
+
+  .media-collection-index-mobile-back {
+    position: sticky;
+    z-index: 8;
+    top: 0;
+    display: flex;
+    min-height: 52px;
+    align-items: center;
+    margin: -22px -22px 22px;
+    padding: 4px 16px;
+    border-bottom: 1px solid var(--media-card-border);
+    background: color-mix(in srgb, var(--background-primary) 96%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .media-collection-index-mobile-back-button {
+    display: inline-flex;
+    width: auto;
+    min-height: 44px;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 0 4px;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--text-normal);
+    font-size: 1.08rem;
+    font-weight: 680;
+  }
+
+  .media-collection-index-mobile-back-button:hover,
+  .media-collection-index-mobile-back-button:active {
+    background: transparent !important;
+    color: var(--text-accent);
+  }
+
+  .media-collection-index-mobile-back-icon,
+  .media-collection-index-mobile-back-icon svg {
+    width: 22px;
+    height: 22px;
   }
 
   .media-collection-index-navigation {
@@ -4169,6 +4329,12 @@
     padding: 16px;
   }
 
+  .media-collection-index-mobile-back {
+    margin: -16px -16px 18px;
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
   .media-collection-index-hero {
     min-height: 180px;
     grid-template-columns: 92px minmax(0, 1fr);
@@ -4185,9 +4351,11 @@
   }
 
   .media-collection-index-relation {
+    position: relative;
     min-height: 150px;
     grid-template-columns: 80px minmax(0, 1fr);
     gap: 12px;
+    padding-right: 38px;
   }
 
   .media-collection-index-relation-cover {
@@ -4198,30 +4366,43 @@
   .media-collection-index-relation-description {
     display: none;
   }
+
+  .media-collection-index-relation-context {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    grid-column: auto;
+    margin: 0;
+    transform: translateY(-50%);
+  }
+
+  .media-collection-index-relation-context span:first-child {
+    display: none;
+  }
 }
 
 
-/* Dark media system continuation: homepage concept 3. */
+/* Dark media system continuation: softened blue-charcoal palette. */
 :is(.media-library-page, .media-library-note) {
-  --background-primary: #0d0f12;
-  --background-primary-alt: #111318;
-  --background-secondary: #15181d;
-  --background-secondary-alt: #191c22;
-  --background-modifier-border: #292d35;
-  --background-modifier-border-hover: #3b404a;
-  --background-modifier-hover: #1b1f25;
-  --background-modifier-active-hover: #222731;
+  --background-primary: #12161b;
+  --background-primary-alt: #161b21;
+  --background-secondary: #1a2027;
+  --background-secondary-alt: #202730;
+  --background-modifier-border: #303946;
+  --background-modifier-border-hover: #424c5a;
+  --background-modifier-hover: #222932;
+  --background-modifier-active-hover: #29323d;
   --background-modifier-box-shadow: #000000;
-  --text-normal: #eceef2;
-  --text-muted: #979ca7;
-  --text-faint: #686e79;
+  --text-normal: #e2e6eb;
+  --text-muted: #a0a8b3;
+  --text-faint: #78818d;
   --text-accent: #a895ff;
   --text-accent-hover: #bdadff;
   --interactive-accent: #6657dd;
   --interactive-accent-hover: #7567e8;
-  --media-card-border: #292d35;
-  --media-card-bg: #15181d;
-  --media-muted: #979ca7;
+  --media-card-border: #303946;
+  --media-card-bg: #1a2027;
+  --media-muted: #a0a8b3;
   color: var(--text-normal);
   background: var(--background-primary);
   color-scheme: dark;
@@ -4427,4 +4608,1082 @@
 
 .media-library-guide :is(a.internal-link, a.external-link) {
   color: var(--text-accent);
+}
+
+/* QuickAdd: compact media-type launcher. Scoped to the root "新增作品" chooser. */
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) {
+  --media-quickadd-surface: #171c22;
+  --media-quickadd-row: #1a2027;
+  --media-quickadd-row-hover: #222932;
+  --media-quickadd-border: #303946;
+  --media-quickadd-text: #e2e6eb;
+  --media-quickadd-muted: #929ba7;
+  width: min(600px, calc(100vw - 32px));
+  min-width: 0;
+  max-width: 600px;
+  height: auto;
+  min-height: 0;
+  max-height: min(720px, calc(100vh - 48px));
+  overflow: hidden;
+  border: 1px solid var(--media-quickadd-border);
+  border-radius: 12px;
+  background: var(--media-quickadd-surface);
+  box-shadow: 0 24px 70px rgb(0 0 0 / 42%);
+  color: var(--media-quickadd-text);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .prompt-input-container {
+  position: relative;
+  min-height: 104px;
+  padding: 22px 56px 22px 32px;
+  border-bottom: 1px solid var(--media-quickadd-border) !important;
+  background: #181d24;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .prompt-input-container::before {
+  position: absolute;
+  top: 24px;
+  bottom: 48px;
+  left: 22px;
+  width: 3px;
+  border-radius: 999px;
+  background: #9b7cf3;
+  content: "";
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .prompt-input-container::after {
+  position: absolute;
+  bottom: 22px;
+  left: 32px;
+  color: var(--media-quickadd-muted);
+  font-size: 13px;
+  font-weight: 450;
+  line-height: 1;
+  pointer-events: none;
+  content: "选择要记录的媒体类型";
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) input.prompt-input {
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--media-quickadd-text);
+  caret-color: #a895ff;
+  font-size: 22px;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 32px;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) input.prompt-input:placeholder-shown {
+  caret-color: transparent;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) input.prompt-input::placeholder {
+  color: var(--media-quickadd-text);
+  opacity: 1;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .prompt-results {
+  max-height: min(548px, calc(100vh - 176px));
+  padding: 20px 24px 24px;
+  overflow-y: auto;
+  background: var(--media-quickadd-surface);
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) :is(.suggestion-container, .suggestion) {
+  overflow: visible;
+  padding: 0;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .suggestion {
+  display: flex;
+  flex-direction: column;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .quickadd-choice-suggestion {
+  --media-quickadd-type: #9b7cf3;
+  --media-quickadd-description: "";
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 64px;
+  margin: 0;
+  padding: 10px 16px;
+  border: 1px solid var(--media-quickadd-border);
+  border-bottom: 0;
+  border-radius: 0;
+  background: var(--media-quickadd-row);
+  color: var(--media-quickadd-text);
+  transition: background-color 120ms ease, box-shadow 120ms ease;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .quickadd-choice-suggestion:first-child {
+  border-radius: 9px 9px 0 0;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .quickadd-choice-suggestion:has(+ .quickadd-choice-suggestion .lucide-library-big),
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .quickadd-choice-suggestion:last-child:not(:has(.lucide-library-big)) {
+  border-bottom: 1px solid var(--media-quickadd-border);
+  border-radius: 0 0 9px 9px;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .quickadd-choice-suggestion:is(:hover, .is-selected) {
+  background: color-mix(in srgb, var(--media-quickadd-type) 9%, var(--media-quickadd-row-hover));
+  box-shadow: inset 3px 0 0 var(--media-quickadd-type);
+  color: var(--media-quickadd-text);
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .quickadd-choice-suggestion-content {
+  gap: 14px;
+  width: 100%;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .quickadd-choice-icon {
+  display: inline-flex;
+  flex: 0 0 28px;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  color: var(--media-quickadd-type);
+  --icon-size: 21px;
+  --icon-stroke: 1.8px;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .quickadd-choice-suggestion-text {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 4px;
+  min-width: 0;
+  overflow: visible;
+  color: var(--media-quickadd-text);
+  font-size: 15px;
+  font-weight: 620;
+  line-height: 1.2;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .quickadd-choice-suggestion-text::after {
+  overflow: hidden;
+  color: var(--media-quickadd-muted);
+  content: var(--media-quickadd-description);
+  font-size: 12px;
+  font-weight: 450;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .quickadd-choice-suggestion:has(.lucide-book-open) {
+  --media-quickadd-type: #d9a33e;
+  --media-quickadd-description: "记录页数与阅读进度";
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .quickadd-choice-suggestion:has(.lucide-tv) {
+  --media-quickadd-type: #9b7cf3;
+  --media-quickadd-description: "按集追踪观看进度";
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .quickadd-choice-suggestion:has(.lucide-clapperboard) {
+  --media-quickadd-type: #e45b5b;
+  --media-quickadd-description: "按分钟记录观影进度";
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .quickadd-choice-suggestion:has(.lucide-sparkles) {
+  --media-quickadd-type: #34a9d6;
+  --media-quickadd-description: "按集追踪追番进度";
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .quickadd-choice-suggestion:has(.lucide-gamepad-2) {
+  --media-quickadd-type: #50c985;
+  --media-quickadd-description: "记录百分比进度";
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .quickadd-choice-suggestion:has(.lucide-library-big) {
+  --media-quickadd-type: #929ba7;
+  --media-quickadd-description: "将多个相关作品整理到一起";
+  min-height: 58px;
+  margin-top: 12px;
+  border: 1px solid var(--media-quickadd-border);
+  border-radius: 9px;
+  background: #191f26;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .quickadd-choice-suggestion:has(.lucide-library-big):is(:hover, .is-selected) {
+  background: #222932;
+  box-shadow: inset 3px 0 0 #9b7cf3;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .modal-close-button {
+  top: 18px;
+  right: 18px;
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--media-quickadd-muted);
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .modal-close-button:hover {
+  border-color: var(--media-quickadd-border);
+  background: var(--media-quickadd-row-hover);
+  color: var(--media-quickadd-text);
+}
+
+@media (max-width: 640px) {
+  body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) {
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
+  }
+
+  body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .prompt-input-container {
+    min-height: 96px;
+    padding-right: 48px;
+  }
+
+  body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .prompt-results {
+    padding: 14px;
+  }
+}
+
+/* QuickAdd: collection form refinement for the current one-page DOM. */
+body.theme-dark .quickAddModal.onePageInputModal:has(select option[value="series"]) .modal {
+  width: min(520px, calc(100vw - 32px));
+  max-width: 520px;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal:has(select option[value="series"]) .qa-onepage-preview {
+  display: none !important;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal:has(select option[value="series"]) .modal-content {
+  padding: 22px 24px 24px;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal:has(select option[value="series"]) .modal-content > .setting-item {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  min-height: 58px;
+  padding: 12px 2px;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal:has(select option[value="series"]) .modal-content > .setting-item .setting-item-info {
+  flex-basis: auto;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal:has(select option[value="series"]) .modal-content > .setting-item .setting-item-control {
+  justify-content: flex-start;
+  width: 100%;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal:has(select option[value="series"]) .modal-content > .setting-item input[type="text"] {
+  width: 100%;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal:has(select option[value="series"]) .modal-content > .setting-item select {
+  width: 160px;
+  max-width: 100%;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .modal-content > div:last-child > .setting-item {
+  display: flex;
+  justify-content: flex-end;
+  min-height: 0;
+  margin-top: 6px;
+  padding: 16px 0 0;
+  border-top: 1px solid #303946;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .modal-content > div:last-child > .setting-item .setting-item-info {
+  display: none;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .modal-content > div:last-child > .setting-item .setting-item-control {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .modal-content > div:last-child > .setting-item button {
+  min-width: 84px;
+  min-height: 38px;
+  padding: 8px 17px;
+  border: 1px solid #394352;
+  border-radius: 8px;
+  background: #202731;
+  box-shadow: none;
+  color: #d7dce2;
+  font-size: 0;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .modal-content > div:last-child > .setting-item button::after {
+  font-size: 13px;
+  font-weight: 620;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .modal-content > div:last-child > .setting-item button.mod-cta {
+  border-color: #7664d8;
+  background: #6957d6;
+  color: #fff;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .modal-content > div:last-child > .setting-item button.mod-cta::after {
+  content: "创建";
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .modal-content > div:last-child > .setting-item button:not(.mod-cta)::after {
+  content: "取消";
+}
+
+@media (max-width: 560px) {
+  body.theme-dark .quickAddModal.onePageInputModal:has(select option[value="series"]) .modal {
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
+  }
+
+  body.theme-dark .quickAddModal.onePageInputModal:has(select option[value="series"]) .modal-content > .setting-item {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.theme-dark .prompt:has(input.prompt-input[placeholder="新增作品"]) .quickadd-choice-suggestion {
+    transition: none;
+  }
+}
+
+/* QuickAdd: compact second-level import/manual chooser. */
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) {
+  --media-quickadd-type: #9b7cf3;
+  --media-quickadd-surface: #171c22;
+  --media-quickadd-row: #1a2027;
+  --media-quickadd-row-hover: #222932;
+  --media-quickadd-border: #303946;
+  --media-quickadd-text: #e2e6eb;
+  --media-quickadd-muted: #929ba7;
+  width: min(540px, calc(100vw - 32px));
+  min-width: 0;
+  max-width: 540px;
+  height: auto;
+  min-height: 0;
+  max-height: min(520px, calc(100vh - 48px));
+  overflow: hidden;
+  border: 1px solid var(--media-quickadd-border);
+  border-radius: 12px;
+  background: var(--media-quickadd-surface);
+  box-shadow: 0 24px 70px rgb(0 0 0 / 42%);
+  color: var(--media-quickadd-text);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="图书"]) {
+  --media-quickadd-type: #d9a33e;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="电视剧"]) {
+  --media-quickadd-type: #9b7cf3;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="电影"]) {
+  --media-quickadd-type: #e45b5b;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="动漫"]) {
+  --media-quickadd-type: #34a9d6;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="游戏"]) {
+  --media-quickadd-type: #50c985;
+}
+
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .prompt-input-container {
+  position: relative;
+  min-height: 92px;
+  padding: 20px 52px 18px 30px;
+  border-bottom: 1px solid var(--media-quickadd-border) !important;
+  background: #181d24;
+}
+
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .prompt-input-container::before {
+  position: absolute;
+  top: 21px;
+  bottom: 39px;
+  left: 20px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--media-quickadd-type);
+  content: "";
+}
+
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .prompt-input-container::after {
+  position: absolute;
+  bottom: 18px;
+  left: 30px;
+  color: var(--media-quickadd-muted);
+  content: "选择添加方式";
+  font-size: 12px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) input.prompt-input {
+  height: 30px;
+  padding: 0;
+  border: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--media-quickadd-text);
+  caret-color: #a895ff;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 30px;
+}
+
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) input.prompt-input:placeholder-shown {
+  caret-color: transparent;
+}
+
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) input.prompt-input::placeholder {
+  color: var(--media-quickadd-text);
+  opacity: 1;
+}
+
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .prompt-results {
+  max-height: min(380px, calc(100vh - 148px));
+  padding: 16px 20px 20px;
+  background: var(--media-quickadd-surface);
+}
+
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) :is(.suggestion-container, .suggestion) {
+  overflow: visible;
+  padding: 0;
+  background: transparent;
+}
+
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 62px;
+  padding: 10px 15px;
+  border: 1px solid var(--media-quickadd-border);
+  border-bottom: 0;
+  border-radius: 0;
+  background: var(--media-quickadd-row);
+  color: var(--media-quickadd-text);
+}
+
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion:first-child {
+  border-radius: 9px 9px 0 0;
+}
+
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion:nth-child(2) {
+  border-bottom: 1px solid var(--media-quickadd-border);
+  border-radius: 0 0 9px 9px;
+}
+
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion:is(:hover, .is-selected) {
+  background: color-mix(in srgb, var(--media-quickadd-type) 9%, var(--media-quickadd-row-hover));
+  box-shadow: inset 3px 0 0 var(--media-quickadd-type);
+}
+
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion-content {
+  gap: 13px;
+  width: 100%;
+}
+
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-icon {
+  display: inline-flex;
+  flex: 0 0 27px;
+  align-items: center;
+  justify-content: center;
+  width: 27px;
+  color: var(--media-quickadd-type);
+  --icon-size: 20px;
+  --icon-stroke: 1.8px;
+}
+
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion-text {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  color: var(--media-quickadd-text);
+  font-size: 15px;
+  font-weight: 620;
+  line-height: 1.2;
+}
+
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion-text::after {
+  color: var(--media-quickadd-muted);
+  font-size: 12px;
+  font-weight: 450;
+  line-height: 1.2;
+}
+
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion:has(.lucide-download) .quickadd-choice-suggestion-text::after {
+  content: "自动搜索并导入条目信息";
+}
+
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion:has(.lucide-pencil-line) .quickadd-choice-suggestion-text::after {
+  content: "手动填写作品信息";
+}
+
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion-back {
+  min-height: 48px;
+  margin-top: 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--media-quickadd-muted);
+}
+
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion-back:is(:hover, .is-selected) {
+  border-color: var(--media-quickadd-border);
+  background: #1a2027;
+  box-shadow: none;
+}
+
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion-back .quickadd-choice-suggestion-text {
+  font-size: 0;
+}
+
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion-back .quickadd-choice-suggestion-text::before {
+  color: var(--media-quickadd-text);
+  content: "返回上一级";
+  font-size: 14px;
+  font-weight: 580;
+}
+
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion-back .quickadd-choice-suggestion-text::after {
+  color: var(--media-quickadd-muted);
+  content: "重新选择媒体类型";
+  font-size: 11px;
+}
+
+/* Douban: dense, scan-friendly result list. */
+body.theme-dark .prompt:has(input.prompt-input[placeholder^="选择一项内容"]) {
+  width: min(900px, calc(100vw - 32px));
+  min-width: 0;
+  max-width: 900px;
+  max-height: min(78vh, 760px);
+  overflow: hidden;
+  border: 1px solid #303946;
+  border-radius: 12px;
+  background: #171c22;
+  box-shadow: 0 24px 70px rgb(0 0 0 / 42%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder^="选择一项内容"]) .prompt-input-container {
+  padding: 16px 52px 14px 22px;
+  border-bottom: 1px solid #303946 !important;
+  background: #181d24;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder^="选择一项内容"]) input.prompt-input {
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #394352;
+  border-radius: 8px;
+  background: #13181e !important;
+  box-shadow: none !important;
+  color: #e2e6eb;
+  caret-color: #a895ff;
+  font-size: 15px;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder^="选择一项内容"]) input.prompt-input:focus {
+  border-color: #7664d8;
+  box-shadow: 0 0 0 2px rgb(118 100 216 / 18%) !important;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder^="选择一项内容"]) .prompt-results {
+  max-height: min(66vh, 650px);
+  padding: 8px 10px 12px;
+  overflow-y: auto;
+  background: #171c22;
+  scrollbar-width: thin;
+  scrollbar-color: #46515f transparent;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder^="选择一项内容"]) :is(.suggestion-container, .suggestion) {
+  padding: 0;
+  background: transparent;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder^="选择一项内容"]) .suggestion-item {
+  min-height: 44px;
+  padding: 11px 14px;
+  overflow: hidden;
+  border-bottom: 1px solid rgb(48 57 70 / 72%);
+  border-radius: 6px;
+  color: #cfd5dc;
+  font-size: 13px;
+  line-height: 1.55;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder^="选择一项内容"]) .suggestion-item:last-child {
+  border-bottom-color: transparent;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder^="选择一项内容"]) .suggestion-item:is(:hover, .is-selected) {
+  background: #252b36;
+  box-shadow: inset 3px 0 0 #8d78ef;
+  color: #eef1f4;
+}
+
+/* QuickAdd: polished one-page form and Chinese UI copy. */
+body.theme-dark .quickAddModal.onePageInputModal .modal {
+  width: min(640px, calc(100vw - 32px));
+  min-width: 0;
+  max-width: 640px;
+  max-height: min(80vh, 760px);
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #303946;
+  border-radius: 12px;
+  background: #171c22;
+  box-shadow: 0 24px 70px rgb(0 0 0 / 42%);
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .modal-content {
+  padding: 24px 26px 26px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #46515f transparent;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .qa-onepage-title {
+  margin: 0 0 20px;
+  padding-left: 12px;
+  border-left: 3px solid #9b7cf3;
+  color: #e2e6eb;
+  font-size: 0;
+  line-height: 1.2;
+  text-align: left;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .qa-onepage-title::after {
+  content: "填写作品信息";
+  font-size: 21px;
+  font-weight: 720;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal:has(select option[value="series"]) .qa-onepage-title::after {
+  content: "创建合集";
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .qa-onepage-preview {
+  margin: 0 0 8px;
+  padding: 12px 14px;
+  border: 1px solid #303946;
+  border-radius: 8px;
+  background: #1a2027;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .qa-onepage-preview-row {
+  align-items: baseline;
+  gap: 10px;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .qa-preview-key {
+  min-width: 70px;
+  color: #929ba7;
+  font-size: 0;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .qa-preview-key::after {
+  content: "文件名：";
+  font-size: 12px;
+  font-weight: 580;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .qa-preview-val {
+  color: #cfd5dc;
+  font-size: 12px;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .setting-item {
+  gap: 18px;
+  min-height: 64px;
+  padding: 14px 2px;
+  border-top: 1px solid #303946;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .setting-item-info {
+  flex: 0 0 150px;
+  margin: 0;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .setting-item-name {
+  color: #cfd5dc;
+  font-size: 13px;
+  font-weight: 580;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .setting-item:has(select option[value="series"]) .setting-item-name {
+  font-size: 0;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .setting-item:has(select option[value="series"]) .setting-item-name::after {
+  content: "合集类型";
+  font-size: 13px;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .setting-item-control {
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal :is(input[type="text"], input[type="number"], select, textarea) {
+  min-height: 38px;
+  border: 1px solid #394352;
+  border-radius: 8px;
+  background: #13181e;
+  box-shadow: none;
+  color: #e2e6eb;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal :is(input[type="text"], input[type="number"], select, textarea):focus {
+  border-color: #7664d8;
+  box-shadow: 0 0 0 2px rgb(118 100 216 / 18%);
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row {
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #303946;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button {
+  min-width: 88px;
+  min-height: 38px;
+  padding: 8px 18px;
+  border: 1px solid #394352;
+  border-radius: 8px;
+  background: #202731;
+  box-shadow: none;
+  color: #d7dce2;
+  font-size: 0;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button::after {
+  font-size: 13px;
+  font-weight: 620;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button:first-child::after {
+  content: "创建";
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button:last-child::after {
+  content: "取消";
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button:first-child {
+  border-color: #7664d8;
+  background: #6957d6;
+  color: #fff;
+}
+
+body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button:is(:hover, :focus-visible) {
+  filter: brightness(1.08);
+}
+
+@media (max-width: 640px) {
+  body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])),
+  body.theme-dark .prompt:has(input.prompt-input[placeholder^="选择一项内容"]) {
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
+  }
+
+  body.theme-dark .quickAddModal.onePageInputModal .modal {
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
+  }
+
+  body.theme-dark .quickAddModal.onePageInputModal .modal-content {
+    padding: 20px 18px;
+  }
+
+  body.theme-dark .quickAddModal.onePageInputModal .setting-item {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  body.theme-dark .quickAddModal.onePageInputModal .setting-item-info {
+    flex-basis: auto;
+  }
+
+  body.theme-dark .quickAddModal.onePageInputModal .setting-item-control {
+    justify-content: stretch;
+    width: 100%;
+  }
+}
+
+/* Mobile: menu prompts are tap-first, so do not summon the keyboard. */
+@media (max-width: 520px) {
+  .is-mobile .prompt:has(input.prompt-input:is(
+    [placeholder="新增作品"],
+    [placeholder="图书"],
+    [placeholder="电视剧"],
+    [placeholder="电影"],
+    [placeholder="动漫"],
+    [placeholder="游戏"]
+  )) {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: calc(100dvh - 88px);
+  }
+
+  .is-mobile .prompt:has(input.prompt-input:is(
+    [placeholder="新增作品"],
+    [placeholder="图书"],
+    [placeholder="电视剧"],
+    [placeholder="电影"],
+    [placeholder="动漫"],
+    [placeholder="游戏"]
+  )) input.prompt-input {
+    display: none !important;
+  }
+
+  .is-mobile .prompt:has(input.prompt-input:is(
+    [placeholder="新增作品"],
+    [placeholder="图书"],
+    [placeholder="电视剧"],
+    [placeholder="电影"],
+    [placeholder="动漫"],
+    [placeholder="游戏"]
+  )) .prompt-input-container {
+    display: flex;
+    min-height: 64px;
+    align-items: center;
+    padding: 0 52px 0 30px;
+  }
+
+  .is-mobile .prompt:has(input.prompt-input:is(
+    [placeholder="新增作品"],
+    [placeholder="图书"],
+    [placeholder="电视剧"],
+    [placeholder="电影"],
+    [placeholder="动漫"],
+    [placeholder="游戏"]
+  )) .prompt-input-container::before {
+    top: 19px;
+    bottom: 19px;
+    left: 20px;
+  }
+
+  .is-mobile .prompt:has(input.prompt-input:is(
+    [placeholder="新增作品"],
+    [placeholder="图书"],
+    [placeholder="电视剧"],
+    [placeholder="电影"],
+    [placeholder="动漫"],
+    [placeholder="游戏"]
+  )) .prompt-input-container::after {
+    position: static !important;
+    display: block !important;
+    color: var(--media-quickadd-text) !important;
+    font-size: 20px !important;
+    font-weight: 720 !important;
+    line-height: 1.2 !important;
+  }
+
+  .is-mobile .prompt:has(input.prompt-input[placeholder="新增作品"]) .prompt-input-container::after {
+    content: "新增作品" !important;
+  }
+
+  .is-mobile .prompt:has(input.prompt-input[placeholder="图书"]) .prompt-input-container::after {
+    content: "图书" !important;
+  }
+
+  .is-mobile .prompt:has(input.prompt-input[placeholder="电视剧"]) .prompt-input-container::after {
+    content: "电视剧" !important;
+  }
+
+  .is-mobile .prompt:has(input.prompt-input[placeholder="电影"]) .prompt-input-container::after {
+    content: "电影" !important;
+  }
+
+  .is-mobile .prompt:has(input.prompt-input[placeholder="动漫"]) .prompt-input-container::after {
+    content: "动漫" !important;
+  }
+
+  .is-mobile .prompt:has(input.prompt-input[placeholder="游戏"]) .prompt-input-container::after {
+    content: "游戏" !important;
+  }
+
+  .is-mobile .prompt:has(input.prompt-input[placeholder="新增作品"]) .prompt-results {
+    max-height: calc(100dvh - 174px);
+    padding: 12px;
+  }
+
+  .is-mobile .prompt:has(input.prompt-input:is(
+    [placeholder="图书"],
+    [placeholder="电视剧"],
+    [placeholder="电影"],
+    [placeholder="动漫"],
+    [placeholder="游戏"]
+  )) .prompt-results {
+    max-height: calc(100dvh - 174px);
+    padding: 12px;
+  }
+
+  /* Mobile category header: keep the count and CTA inside the viewport. */
+  .media-category-header-actions {
+    display: grid;
+    grid-template-columns: auto minmax(132px, 160px);
+    justify-content: start;
+    gap: 12px;
+  }
+
+  .media-category-add {
+    width: 100%;
+    min-width: 0;
+    min-height: 36px;
+    padding: 0 12px 0 30px;
+  }
+
+  .media-category-add-icon {
+    left: 10px;
+  }
+
+  /* Mobile work detail: reserve enough room for a three-digit percentage. */
+  .media-library-note .media-progress-control {
+    grid-template-columns: 28px 62px max-content 28px minmax(64px, 1fr) 48px;
+    gap: 6px;
+  }
+
+  .media-library-note .media-progress-number {
+    width: 62px;
+    min-width: 62px;
+  }
+
+  .media-library-note .media-progress-output {
+    grid-column: 6;
+    min-width: 48px;
+    overflow: visible;
+    justify-self: end;
+  }
+}
+
+/* Mobile QuickAdd title: reuse the reliably rendered ::before layer. */
+@media (max-width: 520px) {
+  .is-mobile .prompt:has(input.prompt-input:is(
+    [placeholder="新增作品"],
+    [placeholder="图书"],
+    [placeholder="电视剧"],
+    [placeholder="电影"],
+    [placeholder="动漫"],
+    [placeholder="游戏"]
+  )) .prompt-input-container {
+    background-color: #181d24 !important;
+    background-image: linear-gradient(var(--media-mobile-title-accent, #9b7cf3), var(--media-mobile-title-accent, #9b7cf3)) !important;
+    background-position: 20px center !important;
+    background-repeat: no-repeat !important;
+    background-size: 3px 26px !important;
+  }
+
+  .is-mobile .prompt:has(input.prompt-input[placeholder="新增作品"]) {
+    --media-mobile-title-accent: #9b7cf3;
+  }
+
+  .is-mobile .prompt:has(input.prompt-input:is(
+    [placeholder="图书"],
+    [placeholder="电视剧"],
+    [placeholder="电影"],
+    [placeholder="动漫"],
+    [placeholder="游戏"]
+  )) {
+    --media-mobile-title-accent: var(--media-quickadd-type);
+  }
+
+  .is-mobile .prompt:has(input.prompt-input:is(
+    [placeholder="新增作品"],
+    [placeholder="图书"],
+    [placeholder="电视剧"],
+    [placeholder="电影"],
+    [placeholder="动漫"],
+    [placeholder="游戏"]
+  )) .prompt-input-container::before {
+    position: absolute !important;
+    z-index: 4 !important;
+    top: 50% !important;
+    right: 52px !important;
+    bottom: auto !important;
+    left: 30px !important;
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: none !important;
+    color: #e2e6eb !important;
+    font-size: 20px !important;
+    font-weight: 720 !important;
+    line-height: 1.2 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    white-space: nowrap !important;
+    transform: translateY(-50%) !important;
+    pointer-events: none !important;
+  }
+
+  .is-mobile .prompt:has(input.prompt-input[placeholder="新增作品"]) .prompt-input-container::before {
+    content: "新增作品" !important;
+  }
+
+  .is-mobile .prompt:has(input.prompt-input[placeholder="图书"]) .prompt-input-container::before {
+    content: "图书" !important;
+  }
+
+  .is-mobile .prompt:has(input.prompt-input[placeholder="电视剧"]) .prompt-input-container::before {
+    content: "电视剧" !important;
+  }
+
+  .is-mobile .prompt:has(input.prompt-input[placeholder="电影"]) .prompt-input-container::before {
+    content: "电影" !important;
+  }
+
+  .is-mobile .prompt:has(input.prompt-input[placeholder="动漫"]) .prompt-input-container::before {
+    content: "动漫" !important;
+  }
+
+  .is-mobile .prompt:has(input.prompt-input[placeholder="游戏"]) .prompt-input-container::before {
+    content: "游戏" !important;
+  }
+
+  .is-mobile .prompt:has(input.prompt-input:is(
+    [placeholder="新增作品"],
+    [placeholder="图书"],
+    [placeholder="电视剧"],
+    [placeholder="电影"],
+    [placeholder="动漫"],
+    [placeholder="游戏"]
+  )) .prompt-input-container::after {
+    display: none !important;
+    content: "" !important;
+  }
 }
