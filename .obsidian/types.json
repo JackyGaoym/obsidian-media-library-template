@@ -14,6 +14,8 @@
     "rating": "number",
     "favorite": "checkbox",
     "added_at": "date",
+    "started_at": "date",
+    "finished_at": "date",
     "series": "text",
     "sequence": "number",
     "collections": "multitext",

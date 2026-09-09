@@ -18,6 +18,10 @@ properties:
     displayName: 出版时间
   status:
     displayName: 状态
+  started_at:
+    displayName: 开始阅读
+  finished_at:
+    displayName: 读完日期
   formula.rating_label:
     displayName: 我的评分
   formula.progress_label:
@@ -114,6 +118,8 @@ views:
       - page_count
       - current_page
       - status
+      - started_at
+      - finished_at
       - rating
       - favorite
       - series

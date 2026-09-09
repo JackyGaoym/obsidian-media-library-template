@@ -2,7 +2,7 @@
   "choices": [
     {
       "id": "a8f3f962-2f97-4b42-86fb-8c8e3571d9e0",
-      "name": "新增媒体",
+      "name": "新增作品",
       "type": "Multi",
       "command": true,
       "icon": "library-big",
@@ -13,6 +13,7 @@
           "name": "图书",
           "type": "Multi",
           "command": true,
+          "icon": "book-open",
           "collapsed": false,
           "choices": [
             {
@@ -20,6 +21,7 @@
               "name": "豆瓣导入图书",
               "type": "Macro",
               "command": false,
+              "icon": "download",
               "onePageInput": "never",
               "macro": {
                 "id": "124d6ae7-d418-479a-922d-9026ccedc9ea",
@@ -40,6 +42,7 @@
               "name": "手动新增图书",
               "type": "Template",
               "command": false,
+              "icon": "pencil-line",
               "onePageInput": "always",
               "templatePath": "媒体库/模板/手动/手动新增图书.md",
               "fileNameFormat": {
@@ -76,6 +79,7 @@
           "name": "电视剧",
           "type": "Multi",
           "command": true,
+          "icon": "tv",
           "collapsed": false,
           "choices": [
             {
@@ -83,6 +87,7 @@
               "name": "豆瓣导入电视剧",
               "type": "Macro",
               "command": false,
+              "icon": "download",
               "onePageInput": "never",
               "macro": {
                 "id": "ef08fbf6-d1f9-4475-99c7-1c187da8439e",
@@ -103,6 +108,7 @@
               "name": "手动新增电视剧",
               "type": "Template",
               "command": false,
+              "icon": "pencil-line",
               "onePageInput": "always",
               "templatePath": "媒体库/模板/手动/手动新增电视剧.md",
               "fileNameFormat": {
@@ -139,6 +145,7 @@
           "name": "电影",
           "type": "Multi",
           "command": true,
+          "icon": "clapperboard",
           "collapsed": false,
           "choices": [
             {
@@ -146,6 +153,7 @@
               "name": "豆瓣导入电影",
               "type": "Macro",
               "command": false,
+              "icon": "download",
               "onePageInput": "never",
               "macro": {
                 "id": "06c04961-d0fd-4608-964a-72c2a07f1e11",
@@ -166,6 +174,7 @@
               "name": "手动新增电影",
               "type": "Template",
               "command": false,
+              "icon": "pencil-line",
               "onePageInput": "always",
               "templatePath": "媒体库/模板/手动/手动新增电影.md",
               "fileNameFormat": {
@@ -202,6 +211,7 @@
           "name": "动漫",
           "type": "Multi",
           "command": true,
+          "icon": "sparkles",
           "collapsed": false,
           "choices": [
             {
@@ -209,6 +219,7 @@
               "name": "豆瓣导入动漫（导入后校正分类）",
               "type": "Macro",
               "command": false,
+              "icon": "download",
               "onePageInput": "never",
               "macro": {
                 "id": "0ce8a38b-1a2b-443e-8626-8b2d817c27ec",
@@ -229,6 +240,7 @@
               "name": "手动新增动漫",
               "type": "Template",
               "command": false,
+              "icon": "pencil-line",
               "onePageInput": "always",
               "templatePath": "媒体库/模板/手动/手动新增动漫.md",
               "fileNameFormat": {
@@ -265,6 +277,7 @@
           "name": "游戏",
           "type": "Multi",
           "command": true,
+          "icon": "gamepad-2",
           "collapsed": false,
           "choices": [
             {
@@ -272,6 +285,7 @@
               "name": "豆瓣导入游戏",
               "type": "Macro",
               "command": false,
+              "icon": "download",
               "onePageInput": "never",
               "macro": {
                 "id": "2958b57c-ab8f-4457-9574-b653144b8c37",
@@ -292,6 +306,7 @@
               "name": "手动新增游戏",
               "type": "Template",
               "command": false,
+              "icon": "pencil-line",
               "onePageInput": "always",
               "templatePath": "媒体库/模板/手动/手动新增游戏.md",
               "fileNameFormat": {
@@ -328,6 +343,7 @@
           "name": "新建合集",
           "type": "Template",
           "command": false,
+          "icon": "library-big",
           "onePageInput": "always",
           "templatePath": "媒体库/模板/手动/合集.md",
           "fileNameFormat": {

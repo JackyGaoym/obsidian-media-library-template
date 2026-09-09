@@ -18,6 +18,10 @@ properties:
     displayName: 集数
   status:
     displayName: 状态
+  started_at:
+    displayName: 开始追剧
+  finished_at:
+    displayName: 看完日期
   formula.rating_label:
     displayName: 我的评分
   formula.progress_label:
@@ -113,6 +117,8 @@ views:
       - episode_count
       - current_episode
       - status
+      - started_at
+      - finished_at
       - rating
       - favorite
       - series

@@ -169,6 +169,50 @@ const searchInput = search.createEl("input", {
 const navigation = sidebar.createDiv({ cls: "media-collection-index-navigation" });
 const panel = root.createEl("main", { cls: "media-collection-index-panel" });
 
+const compactLayout = window.matchMedia("(max-width: 680px)");
+let mobileListScrollTop = 0;
+
+const pageScroller = () => root.closest(".markdown-preview-view, .cm-scroller, .view-content");
+
+const scrollAppToTop = () => {
+  const scroller = pageScroller();
+  if (!scroller) {
+    root.scrollIntoView({ block: "start", behavior: "auto" });
+    return;
+  }
+  const top = root.getBoundingClientRect().top
+    - scroller.getBoundingClientRect().top
+    + scroller.scrollTop;
+  scroller.scrollTo({ top: Math.max(0, top - 8), behavior: "auto" });
+};
+
+const syncMobileVisibility = () => {
+  if (!compactLayout.matches) {
+    sidebar.removeAttribute("aria-hidden");
+    panel.removeAttribute("aria-hidden");
+    return;
+  }
+  const showingDetail = root.classList.contains("is-mobile-detail");
+  if (showingDetail) {
+    sidebar.setAttribute("aria-hidden", "true");
+    panel.removeAttribute("aria-hidden");
+  } else {
+    sidebar.removeAttribute("aria-hidden");
+    panel.setAttribute("aria-hidden", "true");
+  }
+};
+
+const leaveMobileDetail = () => {
+  root.classList.remove("is-mobile-detail");
+  syncMobileVisibility();
+  requestAnimationFrame(() => {
+    const scroller = pageScroller();
+    if (scroller) scroller.scrollTo({ top: mobileListScrollTop, behavior: "auto" });
+    const activeItem = navigation.querySelector(".media-collection-index-nav-item.is-selected");
+    activeItem?.focus({ preventScroll: true });
+  });
+};
+
 let selected = collections[0]
   || series[0]
   || null;
@@ -192,10 +236,21 @@ const renderThumb = (parent, group, cls, members = [], mode = "cover") => {
 };
 
 const selectGroup = group => {
+  const enteringMobileDetail = compactLayout.matches
+    && !root.classList.contains("is-mobile-detail");
+  if (enteringMobileDetail) {
+    mobileListScrollTop = pageScroller()?.scrollTop || 0;
+  }
   selected = group;
   renderNavigation(searchInput.value);
   renderPanel(group);
-  panel.scrollTop = 0;
+  if (compactLayout.matches) {
+    root.classList.add("is-mobile-detail");
+    syncMobileVisibility();
+    requestAnimationFrame(scrollAppToTop);
+  } else {
+    panel.scrollTop = 0;
+  }
 };
 
 const renderNavigation = (query = "") => {
@@ -316,6 +371,20 @@ const renderWorkStrip = (section, works, emptyText) => {
 
 const renderPanel = group => {
   panel.empty();
+
+  const mobileBack = panel.createDiv({ cls: "media-collection-index-mobile-back" });
+  const mobileBackButton = mobileBack.createEl("button", {
+    cls: "media-collection-index-mobile-back-button",
+    attr: {
+      type: "button",
+      "aria-label": "返回合集与系列列表"
+    }
+  });
+  const mobileBackIcon = mobileBackButton.createSpan({ cls: "media-collection-index-mobile-back-icon" });
+  addIcon(mobileBackIcon, "chevron-left");
+  mobileBackButton.createSpan({ text: "合集与系列" });
+  mobileBackButton.addEventListener("click", leaveMobileDetail);
+
   if (!group) {
     panel.createDiv({ cls: "media-collection-index-panel-empty", text: "还没有合集或系列。" });
     return;
@@ -418,5 +487,7 @@ const renderPanel = group => {
 };
 
 searchInput.addEventListener("input", () => renderNavigation(searchInput.value));
+compactLayout.addEventListener?.("change", syncMobileVisibility);
 renderNavigation();
 renderPanel(selected);
+syncMobileVisibility();

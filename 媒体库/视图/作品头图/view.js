@@ -176,12 +176,17 @@ if (page.developer) credits.push(`开发：${plainText(page.developer)}`);
 if (credits.length) info.createDiv({ cls: "media-work-credits", text: credits.join("　") });
 
 const mediaFile = app.vault.getAbstractFileByPath(page.file.path);
+let frontmatterWriteQueue = Promise.resolve();
 
-const writeFields = async values => {
-  if (!mediaFile) return;
-  await app.fileManager.processFrontMatter(mediaFile, frontmatter => {
-    for (const [field, value] of Object.entries(values)) frontmatter[field] = value;
-  });
+const writeFields = values => {
+  if (!mediaFile) return Promise.resolve();
+  const task = frontmatterWriteQueue
+    .catch(() => undefined)
+    .then(() => app.fileManager.processFrontMatter(mediaFile, frontmatter => {
+      for (const [field, value] of Object.entries(values)) frontmatter[field] = value;
+    }));
+  frontmatterWriteQueue = task;
+  return task;
 };
 
 const writeField = async (field, value) => writeFields({ [field]: value });
@@ -455,11 +460,125 @@ const mountProgress = host => {
   if (page.status === "已完成" && hasTotal && savedProgress < total) void commit(total);
 };
 
+const dateLabels = {
+  book: { started: "开始阅读", finished: "读完日期" },
+  tv: { started: "开始追剧", finished: "看完日期" },
+  movie: { started: "开始观看", finished: "观影日期" },
+  anime: { started: "开始追番", finished: "看完日期" },
+  game: { started: "开始游玩", finished: "通关日期" }
+};
+
+const localToday = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const mountDateControls = note => {
+  const callout = note.querySelector('.callout[data-callout="media-control"]');
+  const content = callout?.querySelector(".callout-content");
+  if (!content || content.querySelector(".media-date-row")) return;
+
+  const labels = dateLabels[page.media_type] || { started: "开始日期", finished: "完成日期" };
+  const values = {
+    started_at: dateText(page.started_at),
+    finished_at: dateText(page.finished_at)
+  };
+  const controls = {};
+  const pendingDates = new Set();
+
+  const row = content.createDiv({ cls: "media-date-row" });
+  row.createSpan({ cls: "media-date-row-label", text: "日期" });
+  const fields = row.createDiv({ cls: "media-date-fields" });
+
+  const createField = (field, labelText) => {
+    const group = fields.createDiv({ cls: "media-date-field" });
+    group.createSpan({ cls: "media-date-field-label", text: labelText });
+    const input = group.createEl("input", {
+      cls: "media-date-input",
+      attr: { type: "date", "aria-label": labelText }
+    });
+    input.value = values[field] || "";
+
+    const clear = group.createEl("button", {
+      cls: "media-date-clear clickable-icon",
+      attr: { type: "button", "aria-label": `清除${labelText}`, title: `清除${labelText}` }
+    });
+    setAppIcon(clear, "x", "×");
+
+    const renderClear = () => clear.classList.toggle("is-visible", Boolean(input.value));
+    const commit = async value => {
+      const previous = values[field];
+      const normalized = value || "";
+      values[field] = normalized;
+      input.value = normalized;
+      renderClear();
+      try {
+        await writeField(field, normalized || null);
+        return true;
+      } catch (error) {
+        console.error(`日期字段 ${field} 保存失败`, error);
+        values[field] = previous;
+        input.value = previous;
+        renderClear();
+        showNotice(`${labelText}保存失败，请稍后重试`);
+        return false;
+      }
+    };
+
+    input.addEventListener("input", renderClear);
+    input.addEventListener("change", () => void commit(input.value));
+    input.addEventListener("keydown", event => {
+      if (event.key === "Enter") input.blur();
+    });
+    clear.addEventListener("click", () => void commit(""));
+
+    renderClear();
+    controls[field] = { input, commit };
+  };
+
+  createField("started_at", labels.started);
+  createField("finished_at", labels.finished);
+
+  const recordDateForStatus = (field, labelText) => {
+    if (values[field] || pendingDates.has(field)) return;
+    pendingDates.add(field);
+    const today = localToday();
+    controls[field].input.value = today;
+    controls[field].input.dispatchEvent(new Event("input"));
+    window.setTimeout(async () => {
+      const saved = await controls[field].commit(today);
+      pendingDates.delete(field);
+      if (saved) showNotice(`${labelText}已记录为今天`);
+    }, 80);
+  };
+
+  const attachStatusSync = () => {
+    const statusSelect = Array.from(callout.querySelectorAll("select")).find(select =>
+      Array.from(select.options || []).some(option => option.value === "已完成"));
+    if (!statusSelect || statusSelect.dataset.mediaDateSync === "true") return false;
+    statusSelect.dataset.mediaDateSync = "true";
+    statusSelect.addEventListener("change", () => {
+      if (statusSelect.value === "进行中") {
+        recordDateForStatus("started_at", labels.started);
+      } else if (statusSelect.value === "已完成") {
+        recordDateForStatus("finished_at", labels.finished);
+      }
+    });
+    return true;
+  };
+
+  if (!attachStatusSync()) window.setTimeout(attachStatusSync, 180);
+};
+
 const mountInteractiveControls = () => {
   const note = dv.container.closest(".media-library-note");
   if (!note) return;
   note.querySelectorAll(".media-rating-control:not(.is-ready)").forEach(mountRating);
   note.querySelectorAll(".media-progress-control:not(.is-ready)").forEach(mountProgress);
+  mountDateControls(note);
 };
 
 window.requestAnimationFrame(() => window.requestAnimationFrame(mountInteractiveControls));

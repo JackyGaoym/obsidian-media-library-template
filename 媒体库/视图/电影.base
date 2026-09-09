@@ -18,6 +18,10 @@ properties:
     displayName: 时长
   status:
     displayName: 状态
+  started_at:
+    displayName: 开始观看
+  finished_at:
+    displayName: 观影日期
   formula.rating_label:
     displayName: 我的评分
   formula.progress_label:
@@ -112,6 +116,8 @@ views:
       - runtime_minutes
       - current_minutes
       - status
+      - started_at
+      - finished_at
       - rating
       - favorite
       - series
