@@ -1665,6 +1665,12 @@
   user-select: none;
 }
 
+.media-library-note .media-rating-control.is-saving .media-rating-stars {
+  cursor: progress;
+  opacity: 0.58;
+  pointer-events: none;
+}
+
 .media-library-note .media-rating-star {
   position: relative;
   display: inline-block;
@@ -1743,11 +1749,19 @@
 .media-library-note .media-progress-control {
   display: grid;
   min-width: 0;
-  grid-template-columns: 30px 74px max-content 30px clamp(150px, 18vw, 320px) 42px;
+  grid-template-columns: 30px 74px max-content 30px clamp(150px, 18vw, 320px) 42px max-content;
   align-items: center;
   justify-content: start;
   gap: 9px;
   vertical-align: middle;
+}
+
+.media-library-note .media-progress-control.is-saving {
+  cursor: progress;
+}
+
+.media-library-note .media-progress-control.is-saving :is(.media-progress-number, .media-progress-track, .media-progress-output) {
+  opacity: 0.62;
 }
 
 .media-library-note .media-progress-step {
@@ -1840,6 +1854,28 @@
   color: color-mix(in srgb, var(--media-type-color, var(--interactive-accent)) 72%, var(--text-normal));
   font-weight: 680;
   text-align: right;
+}
+
+.media-library-note .media-progress-complete {
+  min-height: 30px;
+  padding: 4px 12px;
+  border: 1px solid color-mix(in srgb, var(--media-type-color, var(--interactive-accent)) 62%, var(--media-card-border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--media-type-color, var(--interactive-accent)) 14%, var(--background-primary));
+  color: color-mix(in srgb, var(--media-type-color, var(--interactive-accent)) 76%, var(--text-normal));
+  font-size: var(--font-ui-small);
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.media-library-note .media-progress-complete:hover:not(:disabled) {
+  border-color: var(--media-type-color, var(--interactive-accent));
+  background: color-mix(in srgb, var(--media-type-color, var(--interactive-accent)) 22%, var(--background-primary));
+}
+
+.media-library-note .media-progress-complete:disabled {
+  cursor: progress;
+  opacity: 0.56;
 }
 
 .media-library-note .media-progress-hint {
@@ -2620,7 +2656,7 @@
 }
 
 .media-collection-add-works,
-.media-collection-edit-order {
+.media-collection-manage-members {
   min-height: 30px !important;
   margin: 0;
   padding: 3px 4px;
@@ -2648,7 +2684,7 @@
 }
 
 .media-collection-add-works:hover,
-.media-collection-edit-order:hover {
+.media-collection-manage-members:hover {
   color: var(--interactive-accent-hover);
   text-decoration: underline;
 }
@@ -2986,18 +3022,6 @@
   color: var(--text-muted);
 }
 
-.media-collection-member-inherited-note {
-  display: none;
-  margin-top: 20px;
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
-  line-height: 1.5;
-}
-
-.media-collection-layout.is-managing .media-collection-member-inherited-note {
-  display: block;
-}
-
 .media-collection-member-meta {
   display: flex;
   flex-wrap: wrap;
@@ -3029,28 +3053,6 @@
 
 .media-collection-member-open:hover {
   text-decoration: underline !important;
-}
-
-.media-collection-member-remove {
-  display: none;
-  min-height: 28px !important;
-  margin: 14px 0 0 12px;
-  padding: 2px 7px;
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  color: var(--color-red);
-  font-size: var(--font-ui-small);
-  font-weight: 580;
-}
-
-.media-collection-layout.is-managing .media-collection-member-remove {
-  display: inline-block;
-}
-
-.media-collection-member-remove:hover {
-  background: color-mix(in srgb, var(--color-red) 8%, transparent) !important;
-  text-decoration: underline;
 }
 
 .media-collection-empty {
@@ -3294,6 +3296,11 @@
 
   .media-library-note .media-progress-output {
     grid-column: 6;
+  }
+
+  .media-library-note .media-progress-complete {
+    grid-column: 1 / -1;
+    justify-self: start;
   }
 
   .media-library-note .media-date-row {
@@ -4577,7 +4584,7 @@
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--media-collection-accent) 55%, transparent);
 }
 
-.media-collection-layout :is(.media-collection-add-works, .media-collection-edit-order) {
+.media-collection-layout :is(.media-collection-add-works, .media-collection-manage-members) {
   color: var(--media-collection-accent);
 }
 
@@ -5619,6 +5626,11 @@ body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button:is(
     min-width: 48px;
     overflow: visible;
     justify-self: end;
+  }
+
+  .media-library-note .media-progress-complete {
+    grid-column: 1 / -1;
+    justify-self: start;
   }
 }
 
