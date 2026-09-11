@@ -88,27 +88,9 @@ const normalizeLinks = (values, matcher, fallback) => {
   return result;
 };
 
-const syncSeriesCollection = async (collectionGroup, nextCollections) => {
+const inheritedCollections = () => {
   const seriesGroup = groupFor(currentSeries);
-  if (!seriesGroup || !collectionGroup) return;
-  const seriesMembers = allWorks.filter(work => matchesGroup(work.series, seriesGroup));
-  const complete = seriesMembers.length > 0 && seriesMembers.every(work => {
-    const collections = work.file.path === page.file.path ? nextCollections : toArray(work.collections);
-    return collections.some(value => matchesGroup(value, collectionGroup));
-  });
-  const seriesFile = app.vault.getFileByPath(seriesGroup.file.path);
-  if (!seriesFile) return;
-
-  await app.fileManager.processFrontMatter(seriesFile, frontmatter => {
-    const existing = Array.isArray(frontmatter.collections)
-      ? [...frontmatter.collections]
-      : (frontmatter.collections ? [frontmatter.collections] : []);
-    const alreadyLinked = existing.some(value => matchesGroup(value, collectionGroup));
-    if (complete && !alreadyLinked) existing.push(`[[${collectionGroup.file.name}]]`);
-    frontmatter.collections = complete
-      ? existing
-      : existing.filter(value => !matchesGroup(value, collectionGroup));
-  });
+  return seriesGroup ? normalizeLinks(seriesGroup.collections, groupFor, group => `[[${group.file.name}]]`) : [];
 };
 
 const writeRelations = async updater => {
@@ -241,9 +223,12 @@ const openPicker = ({ kind, options, excluded = [], onChoose }) => {
   window.setTimeout(() => search.focus(), 0);
 };
 
-const createLinkChip = ({ host, value, kind, onRemove }) => {
+const createLinkChip = ({ host, value, kind, onRemove, inherited = false }) => {
   const group = groupFor(value);
-  const chip = host.createDiv({ cls: "media-work-relation-chip" });
+  const chip = host.createDiv({
+    cls: `media-work-relation-chip${inherited ? " is-inherited" : ""}`,
+    attr: inherited ? { title: "由当前系列继承；更换或移出系列时会自动变化" } : {}
+  });
   const link = chip.createEl("a", {
     cls: "internal-link",
     text: group?.title || plainText(value) || `未命名${kind}`
@@ -251,6 +236,7 @@ const createLinkChip = ({ host, value, kind, onRemove }) => {
   const href = group?.file.path || linkPath(value);
   link.setAttr("href", href);
   link.setAttr("data-href", href);
+  if (!onRemove) return;
   const remove = chip.createEl("button", {
     cls: "media-work-relation-remove",
     attr: { type: "button", "aria-label": `移除${kind}「${group?.title || plainText(value)}」` }
@@ -326,26 +312,37 @@ const render = () => {
     options: seriesOptions,
     onChoose: async group => {
       const value = `[[${group.file.name}]]`;
-      const inheritedCollections = toArray(group.collections);
-      const nextCollections = [...currentCollections];
-      for (const collection of inheritedCollections) {
-        if (!nextCollections.some(value => linkPath(value) === linkPath(collection))) {
-          nextCollections.push(`[[${plainText(collection)}]]`);
-        }
-      }
       await writeRelations(frontmatter => {
         frontmatter.series = value;
-        frontmatter.collections = nextCollections.map(item => `[[${plainText(item)}]]`);
       });
       currentSeries = value;
-      currentCollections = nextCollections;
       render();
       if (typeof Notice === "function") new Notice(`已设置系列「${group.title || group.file.name}」`);
     }
   }));
 
+  const inheritedRow = root.createDiv({ cls: "media-work-relation-row is-inherited" });
+  inheritedRow.createSpan({ cls: "media-work-relation-label", text: "系列继承" });
+  const inheritedValues = inheritedRow.createDiv({ cls: "media-work-relation-values" });
+  const inherited = inheritedCollections();
+  if (inherited.length) {
+    for (const collection of inherited) {
+      createLinkChip({
+        host: inheritedValues,
+        value: collection,
+        kind: "合集",
+        inherited: true
+      });
+    }
+  } else {
+    inheritedValues.createSpan({
+      cls: "media-work-relation-placeholder",
+      text: currentSeries ? "当前系列未加入合集" : "设置系列后自动显示"
+    });
+  }
+
   const collectionsRow = root.createDiv({ cls: "media-work-relation-row" });
-  collectionsRow.createSpan({ cls: "media-work-relation-label", text: "合集（可多选）" });
+  collectionsRow.createSpan({ cls: "media-work-relation-label", text: "直接加入" });
   const collectionValues = collectionsRow.createDiv({ cls: "media-work-relation-values" });
   if (currentCollections.length) {
     for (const collection of currentCollections) {
@@ -356,7 +353,6 @@ const render = () => {
         onRemove: async () => {
           const next = currentCollections.filter(value => linkPath(value) !== linkPath(collection));
           await writeRelations(frontmatter => { frontmatter.collections = next.map(value => `[[${plainText(value)}]]`); });
-          await syncSeriesCollection(groupFor(collection), next);
           currentCollections = next;
           render();
           if (typeof Notice === "function") new Notice(`已移除合集「${plainText(collection)}」`);
@@ -379,7 +375,6 @@ const render = () => {
       const value = `[[${group.file.name}]]`;
       const next = [...currentCollections, value];
       await writeRelations(frontmatter => { frontmatter.collections = next.map(item => `[[${plainText(item)}]]`); });
-      await syncSeriesCollection(group, next);
       currentCollections = next;
       render();
       if (typeof Notice === "function") new Notice(`已添加合集「${group.title || group.file.name}」`);
