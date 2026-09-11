@@ -75,7 +75,7 @@ const mountCoverControl = () => {
   const mountHost = posterActions.createDiv({ cls: "media-work-cover-mount" });
   try {
     const metaBind = app.plugins.getPlugin("obsidian-meta-bind-plugin");
-    const declaration = 'INPUT[imageSuggester(optionQuery("媒体库/附件/封面"), title(选择封面)):cover]';
+    const declaration = 'INPUT[imageSuggester(optionQuery("媒体库/作品/封面"), title(选择封面)):cover]';
     const fieldType = metaBind?.api?.isInlineFieldDeclarationAndGetType(declaration);
     if (!metaBind?.api || !fieldType) throw new Error("Meta Bind API unavailable");
 

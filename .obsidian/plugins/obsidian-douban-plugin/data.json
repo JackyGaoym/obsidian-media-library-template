@@ -59,7 +59,7 @@
   "loginHeadersContent": "",
   "cacheImage": true,
   "cacheHighQuantityImage": true,
-  "attachmentPath": "媒体库/附件/封面",
+  "attachmentPath": "媒体库/作品/封面",
   "attachmentFileName": "{{id}}-{{title}}",
   "syncHandledDataArray": [],
   "scoreSetting": {
