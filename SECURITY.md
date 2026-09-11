@@ -31,7 +31,7 @@ git ls-files | rg 'workspace|\.trash|\.DS_Store|plugins/.+/(main\.js|styles\.css
 - `.obsidian/workspace.json`、`workspace-mobile.json`：最近打开文件、面板布局和路径。
 - `.trash/`：已删除但仍保留的笔记与附件。
 - `媒体库/作品/`：个人兴趣、进度、日期、评分和短评。
-- `媒体库/附件/`、`媒体库/合集/`：版权图片、文件名与个人整理痕迹。
+- `媒体库/作品/封面/`、`媒体库/作品/横幅/`、`媒体库/合集/`：版权图片、文件名与个人整理痕迹。
 - README 或 Issue 截图：侧边栏、标签页、账号头像、通知和其他仓库名称。
 
 ## 第三方内容
