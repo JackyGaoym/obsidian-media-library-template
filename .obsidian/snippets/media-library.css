@@ -2145,6 +2145,21 @@
   white-space: nowrap;
 }
 
+.media-work-relation-chip.is-inherited {
+  border-style: dashed;
+  background: color-mix(in srgb, var(--interactive-accent) 3%, var(--background-primary));
+}
+
+.media-work-relation-chip.is-inherited > a {
+  padding-right: 8px;
+}
+
+.media-work-relation-row.is-inherited .media-work-relation-label::after {
+  margin-left: 4px;
+  color: var(--text-faint);
+  content: "· 自动";
+}
+
 .media-work-relation-remove {
   display: grid;
   width: 24px;
@@ -2959,6 +2974,28 @@
   background: var(--color-green);
   content: "";
   transform: translateY(-50%);
+}
+
+.media-collection-member-chips .is-origin {
+  border: 1px solid color-mix(in srgb, var(--media-card-border) 82%, transparent);
+  background: color-mix(in srgb, var(--background-secondary) 75%, transparent);
+}
+
+.media-collection-member-chips .is-origin.is-inherited {
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
+.media-collection-member-inherited-note {
+  display: none;
+  margin-top: 20px;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  line-height: 1.5;
+}
+
+.media-collection-layout.is-managing .media-collection-member-inherited-note {
+  display: block;
 }
 
 .media-collection-member-meta {

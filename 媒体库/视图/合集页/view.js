@@ -89,6 +89,7 @@ const isSeries = page.collection_kind === "series";
 const allGroups = dv.pages('"媒体库/合集"')
   .where(group => group.note_type === "media_collection")
   .array();
+const seriesGroups = allGroups.filter(group => group.collection_kind === "series");
 
 const parentCollections = isSeries
   ? allGroups.filter(group =>
@@ -101,11 +102,21 @@ const allWorks = dv.pages('"媒体库/作品"')
   .where(work => work.note_type === "media")
   .array();
 
-const members = allWorks
-  .filter(work => {
-    if (isSeries) return pointsToCurrent(work.series);
-    return toArray(work.collections).some(pointsToCurrent);
-  })
+const linkedSeries = isSeries
+  ? []
+  : seriesGroups.filter(group => toArray(group.collections).some(pointsToCurrent));
+const directMembers = isSeries
+  ? []
+  : allWorks.filter(work => toArray(work.collections).some(pointsToCurrent));
+const inheritedSeriesFor = work => linkedSeries.filter(group => pointsToPage(work.series, group));
+const inheritedMembers = isSeries
+  ? []
+  : allWorks.filter(work => inheritedSeriesFor(work).length > 0);
+const memberMap = new Map(
+  (isSeries ? allWorks.filter(work => pointsToCurrent(work.series)) : [...directMembers, ...inheritedMembers])
+    .map(work => [work.file.path, work])
+);
+const members = [...memberMap.values()]
   .sort((left, right) => {
     const dateOrder = releaseDateValue(left.release_date).localeCompare(releaseDateValue(right.release_date));
     if (dateOrder !== 0) return dateOrder;
@@ -119,7 +130,7 @@ const title = page.title || page.file.name;
 const currentGroupLink = `[[${page.file.name}]]`;
 const defaultDescription = isSeries
   ? "按发布时间整理的系列作品。在作品的系列属性中关联本页后，会自动加入右侧列表。"
-  : "围绕共同主题收录的作品。成员会按发布时间自动排列。";
+  : "成员由直接加入的作品与所属系列继承的作品共同组成，并按发布时间排列。";
 
 const root = dv.container.createDiv({ cls: `media-collection-layout is-${page.collection_kind || "collection"}` });
 const profile = root.createEl("aside", { cls: "media-collection-profile" });
@@ -221,7 +232,12 @@ header.createEl("h2", { text: isSeries ? "系列作品" : "合集成员" });
 const headerActions = header.createDiv({ cls: "media-collection-members-actions" });
 const addWorks = headerActions.createEl("button", {
   cls: "media-collection-add-works",
-  text: "添加作品",
+  text: isSeries ? "添加作品" : "直接添加作品",
+  attr: { type: "button" }
+});
+const manageSeries = isSeries ? null : headerActions.createEl("button", {
+  cls: "media-collection-add-works",
+  text: "管理系列",
   attr: { type: "button" }
 });
 const editOrder = header.createEl("button", {
@@ -231,8 +247,126 @@ const editOrder = header.createEl("button", {
 });
 headerActions.appendChild(editOrder);
 
+const openManageSeriesModal = () => {
+  if (isSeries) return;
+  const initiallyLinked = new Set(linkedSeries.map(group => group.file.path));
+  const selected = new Set(initiallyLinked);
+  const overlay = document.body.createDiv({ cls: "media-collection-add-overlay modal-container" });
+  const modal = overlay.createDiv({
+    cls: "media-collection-add-modal modal",
+    attr: { role: "dialog", "aria-modal": "true", "aria-label": `管理合集「${title}」包含的系列` }
+  });
+  const closeButton = modal.createEl("button", {
+    cls: "modal-close-button",
+    attr: { type: "button", "aria-label": "关闭" }
+  });
+  const closeIcon = closeButton.createSpan({ cls: "media-collection-add-close-icon" });
+  try {
+    if (typeof setIcon === "function") setIcon(closeIcon, "x");
+    else closeIcon.setText("×");
+  } catch (error) {
+    closeIcon.setText("×");
+  }
+
+  const contentEl = modal.createDiv({ cls: "modal-content" });
+  contentEl.createEl("h1", { cls: "modal-title", text: `管理「${title}」包含的系列` });
+  contentEl.createDiv({
+    cls: "media-collection-add-description",
+    text: "勾选的系列会把全部成员带入当前合集；取消后，这些作品不再通过该系列继承，但作品自己直接加入的关系不受影响。"
+  });
+  const search = contentEl.createEl("input", {
+    cls: "media-collection-add-search",
+    attr: { type: "search", placeholder: "搜索系列…", "aria-label": "搜索系列" }
+  });
+  const list = contentEl.createDiv({ cls: "media-collection-add-list", attr: { role: "list" } });
+  const footer = contentEl.createDiv({ cls: "media-collection-add-footer" });
+  const selectionCount = footer.createSpan({ cls: "media-collection-add-count" });
+  const footerActions = footer.createDiv({ cls: "media-collection-add-footer-actions" });
+  const cancel = footerActions.createEl("button", { text: "取消", attr: { type: "button" } });
+  const confirm = footerActions.createEl("button", { cls: "mod-cta", text: "保存", attr: { type: "button" } });
+
+  const closeModal = () => {
+    document.removeEventListener("keydown", handleModalKeydown);
+    overlay.remove();
+  };
+  const handleModalKeydown = event => {
+    if (event.key === "Escape") closeModal();
+  };
+  const updateSelection = () => selectionCount.setText(`已选择 ${selected.size} 个系列`);
+  const renderCandidates = () => {
+    list.empty();
+    const query = search.value.trim().toLocaleLowerCase("zh-Hans-CN");
+    const visible = seriesGroups.filter(group => {
+      const searchable = [group.title, group.file.name, group.description]
+        .filter(Boolean).join(" ").toLocaleLowerCase("zh-Hans-CN");
+      return !query || searchable.includes(query);
+    });
+    if (!visible.length) {
+      list.createDiv({ cls: "media-collection-add-empty", text: "没有找到匹配的系列" });
+      return;
+    }
+    for (const group of visible) {
+      const row = list.createEl("label", { cls: "media-collection-add-item", attr: { role: "listitem" } });
+      const checkbox = row.createEl("input", { attr: { type: "checkbox" } });
+      checkbox.checked = selected.has(group.file.path);
+      const copy = row.createDiv({ cls: "media-collection-add-item-copy" });
+      copy.createDiv({ cls: "media-collection-add-item-title", text: group.title || group.file.name });
+      const memberTotal = allWorks.filter(work => pointsToPage(work.series, group)).length;
+      copy.createDiv({ cls: "media-collection-add-item-meta", text: `${memberTotal} 部系列作品` });
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) selected.add(group.file.path);
+        else selected.delete(group.file.path);
+        row.classList.toggle("is-selected", checkbox.checked);
+        updateSelection();
+      });
+      row.classList.toggle("is-selected", checkbox.checked);
+    }
+  };
+
+  search.addEventListener("input", renderCandidates);
+  closeButton.addEventListener("click", closeModal);
+  cancel.addEventListener("click", closeModal);
+  overlay.addEventListener("click", event => {
+    if (event.target === overlay) closeModal();
+  });
+  confirm.addEventListener("click", async () => {
+    confirm.disabled = true;
+    confirm.setText("正在保存…");
+    try {
+      for (const group of seriesGroups) {
+        const wasLinked = initiallyLinked.has(group.file.path);
+        const shouldLink = selected.has(group.file.path);
+        if (wasLinked === shouldLink) continue;
+        const seriesFile = app.vault.getFileByPath(group.file.path);
+        if (!seriesFile) continue;
+        await app.fileManager.processFrontMatter(seriesFile, frontmatter => {
+          const existing = Array.isArray(frontmatter.collections)
+            ? [...frontmatter.collections]
+            : (frontmatter.collections ? [frontmatter.collections] : []);
+          const withoutCurrent = existing.filter(value => !pointsToCurrent(value));
+          frontmatter.collections = shouldLink ? [...withoutCurrent, currentGroupLink] : withoutCurrent;
+        });
+      }
+      closeModal();
+      if (typeof Notice === "function") new Notice(`已更新合集「${title}」包含的系列`);
+    } catch (error) {
+      console.error("更新合集系列失败", error);
+      if (typeof Notice === "function") new Notice("保存失败，请打开开发者控制台查看详情");
+      confirm.disabled = false;
+      confirm.setText("重新保存");
+    }
+  });
+
+  renderCandidates();
+  updateSelection();
+  document.addEventListener("keydown", handleModalKeydown);
+  window.setTimeout(() => search.focus(), 0);
+};
+
+manageSeries?.addEventListener("click", openManageSeriesModal);
+
 const openAddWorksModal = () => {
-  const memberPaths = new Set(members.map(member => member.file.path));
+  const memberPaths = new Set((isSeries ? members : directMembers).map(member => member.file.path));
   const candidates = allWorks
     .filter(work => !memberPaths.has(work.file.path))
     .sort((left, right) => String(left.title || left.file.name).localeCompare(
@@ -263,7 +397,7 @@ const openAddWorksModal = () => {
     cls: "media-collection-add-description",
     text: isSeries
       ? "选择尚未归入其他系列的作品。已有系列不会被直接覆盖。"
-      : "可一次选择多部作品；完整加入某个系列时，会自动绑定系列与合集。"
+      : "这里添加的是作品自己的直接归属，不会改变其系列或系列所属合集。"
   });
   const search = contentEl.createEl("input", {
     cls: "media-collection-add-search",
@@ -318,7 +452,9 @@ const openAddWorksModal = () => {
     if (!visible.length) {
       list.createDiv({
         cls: "media-collection-add-empty",
-        text: candidates.length ? "没有找到匹配的作品" : `所有作品都已在当前${kind}中`
+        text: candidates.length
+          ? "没有找到匹配的作品"
+          : (isSeries ? "所有可选作品都已在当前系列中" : "所有作品都已直接加入当前合集")
       });
       return;
     }
@@ -338,6 +474,12 @@ const openAddWorksModal = () => {
       copy.createDiv({ cls: "media-collection-add-item-title", text: work.title || work.file.name });
       const facts = [typeLabels[work.media_type] || work.media_type, yearText(work.release_date)].filter(Boolean);
       if (blocked) facts.push(`已有系列：${existingSeries}`);
+      if (!isSeries) {
+        const inheritedFrom = inheritedSeriesFor(work);
+        if (inheritedFrom.length) {
+          facts.push(`当前继承自${inheritedFrom.map(group => group.title || group.file.name).join("、")}`);
+        }
+      }
       copy.createDiv({ cls: "media-collection-add-item-meta", text: facts.join(" · ") || "作品" });
 
       checkbox.addEventListener("change", () => {
@@ -363,22 +505,12 @@ const openAddWorksModal = () => {
 
     try {
       let added = 0;
-      const prospectiveMemberPaths = new Set([...memberPaths, ...selected]);
       for (const path of selected) {
         const workFile = app.vault.getFileByPath(path);
         if (!workFile) continue;
         await app.fileManager.processFrontMatter(workFile, frontmatter => {
           if (isSeries) {
             frontmatter.series = currentGroupLink;
-            const existing = Array.isArray(frontmatter.collections)
-              ? [...frontmatter.collections]
-              : (frontmatter.collections ? [frontmatter.collections] : []);
-            for (const parent of toArray(page.collections)) {
-              if (!existing.some(value => linkPath(value) === linkPath(parent))) {
-                existing.push(`[[${plainText(parent)}]]`);
-              }
-            }
-            frontmatter.collections = existing;
           } else {
             const existing = Array.isArray(frontmatter.collections)
               ? [...frontmatter.collections]
@@ -390,33 +522,8 @@ const openAddWorksModal = () => {
         added += 1;
       }
 
-      let linkedSeriesCount = 0;
-      if (!isSeries) {
-        const seriesToLink = allGroups.filter(group => {
-          if (group.collection_kind !== "series") return false;
-          const seriesMembers = allWorks.filter(work => pointsToPage(work.series, group));
-          return seriesMembers.length > 0
-            && seriesMembers.every(work => prospectiveMemberPaths.has(work.file.path));
-        });
-
-        for (const seriesPage of seriesToLink) {
-          if (toArray(seriesPage.collections).some(pointsToCurrent)) continue;
-          const seriesFile = app.vault.getFileByPath(seriesPage.file.path);
-          if (!seriesFile) continue;
-          await app.fileManager.processFrontMatter(seriesFile, frontmatter => {
-            const existing = Array.isArray(frontmatter.collections)
-              ? [...frontmatter.collections]
-              : (frontmatter.collections ? [frontmatter.collections] : []);
-            if (!existing.some(pointsToCurrent)) existing.push(currentGroupLink);
-            frontmatter.collections = existing;
-          });
-          linkedSeriesCount += 1;
-        }
-      }
-
       if (typeof Notice === "function") {
-        const relationText = linkedSeriesCount ? `，并绑定 ${linkedSeriesCount} 个系列` : "";
-        new Notice(`已将 ${added} 部作品添加到${kind}「${title}」${relationText}`);
+        new Notice(`已将 ${added} 部作品添加到${kind}「${title}」`);
       }
       closeModal();
     } catch (error) {
@@ -449,6 +556,8 @@ if (!members.length) {
 }
 
 members.forEach((member, index) => {
+  const inheritedFrom = isSeries ? [] : inheritedSeriesFor(member);
+  const isDirectMember = !isSeries && toArray(member.collections).some(pointsToCurrent);
   const item = timeline.createDiv({ cls: "media-collection-member" });
   const order = item.createDiv({ cls: "media-collection-member-order" });
   order.createSpan({ text: String(index + 1).padStart(2, "0") });
@@ -479,6 +588,11 @@ members.forEach((member, index) => {
     text: typeLabels[member.media_type] || member.media_type
   });
   if (member.status) chips.createSpan({ cls: "is-status", text: plainText(member.status) });
+  if (isDirectMember) chips.createSpan({ cls: "is-origin is-direct", text: "直接加入" });
+  if (inheritedFrom.length) chips.createSpan({
+    cls: "is-origin is-inherited",
+    text: `继承自${inheritedFrom.map(group => group.title || group.file.name).join("、")}`
+  });
 
   const meta = copy.createDiv({ cls: "media-collection-member-meta" });
   const year = yearText(member.release_date);
@@ -489,10 +603,19 @@ members.forEach((member, index) => {
   open.setAttr("href", member.file.path);
   open.setAttr("data-href", member.file.path);
 
+  if (!isSeries && !isDirectMember) {
+    copy.createSpan({
+      cls: "media-collection-member-inherited-note",
+      text: "此作品由系列继承；请通过“管理系列”调整。"
+    });
+    return;
+  }
+
+  const removeLabel = isSeries ? "移出系列" : "移除直接归属";
   const remove = copy.createEl("button", {
     cls: "media-collection-member-remove",
-    text: `移出${kind}`,
-    attr: { type: "button", "aria-label": `将${member.title || member.file.name}移出当前${kind}` }
+    text: removeLabel,
+    attr: { type: "button", "aria-label": `${removeLabel}：${member.title || member.file.name}` }
   });
   remove.addEventListener("click", async () => {
     const workFile = app.vault.getFileByPath(member.file.path);
@@ -515,43 +638,29 @@ members.forEach((member, index) => {
         frontmatter.collections = existing.filter(value => !pointsToCurrent(value));
       });
 
-      if (!isSeries && member.series) {
-        const memberSeries = allGroups.find(group =>
-          group.collection_kind === "series" && pointsToPage(member.series, group)
-        );
-        const remainingPaths = new Set(
-          members
-            .filter(candidate => candidate.file.path !== member.file.path)
-            .map(candidate => candidate.file.path)
-        );
-        const seriesMembers = memberSeries
-          ? allWorks.filter(work => pointsToPage(work.series, memberSeries))
-          : [];
-        const seriesStillComplete = seriesMembers.length > 0
-          && seriesMembers.every(work => remainingPaths.has(work.file.path));
-
-        if (memberSeries && !seriesStillComplete && toArray(memberSeries.collections).some(pointsToCurrent)) {
-          const seriesFile = app.vault.getFileByPath(memberSeries.file.path);
-          if (seriesFile) {
-            await app.fileManager.processFrontMatter(seriesFile, frontmatter => {
-              const existing = Array.isArray(frontmatter.collections)
-                ? frontmatter.collections
-                : (frontmatter.collections ? [frontmatter.collections] : []);
-              frontmatter.collections = existing.filter(value => !pointsToCurrent(value));
-            });
-          }
-        }
+      if (!inheritedFrom.length) {
+        item.remove();
+        const remaining = timeline.querySelectorAll(".media-collection-member").length;
+        memberCount.setText(`${remaining} 部作品`);
+      } else {
+        remove.remove();
+        item.querySelector(".is-origin.is-direct")?.remove();
+        copy.createSpan({
+          cls: "media-collection-member-inherited-note",
+          text: "此作品仍由系列继承；请通过“管理系列”调整。"
+        });
       }
-
-      item.remove();
-      const remaining = timeline.querySelectorAll(".media-collection-member").length;
-      memberCount.setText(`${remaining} 部作品`);
-      if (typeof Notice === "function") new Notice(`已将「${member.title || member.file.name}」移出${kind}`);
+      if (typeof Notice === "function") {
+        const result = inheritedFrom.length
+          ? "已移除直接归属，作品仍通过系列保留在合集"
+          : `已将「${member.title || member.file.name}」${removeLabel}`;
+        new Notice(result);
+      }
     } catch (error) {
       console.error(`移出${kind}失败`, error);
       if (typeof Notice === "function") new Notice("移出失败，请打开开发者控制台查看详情");
       remove.disabled = false;
-      remove.setText(`移出${kind}`);
+      remove.setText(removeLabel);
     }
   });
 });
