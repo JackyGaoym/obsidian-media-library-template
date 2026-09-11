@@ -24,6 +24,64 @@ const toArray = value => {
   return [value];
 };
 
+const showNotice = message => {
+  if (typeof Notice === "function") new Notice(message);
+};
+
+const cloneValue = value => {
+  if (Array.isArray(value)) return value.map(cloneValue);
+  if (value && typeof value === "object") return { ...value };
+  return value;
+};
+
+const snapshotField = (frontmatter, field) => ({
+  exists: Object.prototype.hasOwnProperty.call(frontmatter, field),
+  value: cloneValue(frontmatter[field])
+});
+
+const restoreField = (frontmatter, field, snapshot) => {
+  if (snapshot.exists) frontmatter[field] = cloneValue(snapshot.value);
+  else delete frontmatter[field];
+};
+
+const applyFrontmatterBatch = async (changes, failureLabel, checkHint) => {
+  const attempted = [];
+  try {
+    for (const change of changes) {
+      let record = null;
+      try {
+        await app.fileManager.processFrontMatter(change.file, frontmatter => {
+          record = { change, snapshot: snapshotField(frontmatter, change.field) };
+          change.update(frontmatter);
+        });
+      } catch (error) {
+        if (record) attempted.push(record);
+        throw error;
+      }
+      attempted.push(record);
+    }
+  } catch (error) {
+    const rollbackFailures = [];
+    for (const record of [...attempted].reverse()) {
+      try {
+        await app.fileManager.processFrontMatter(record.change.file, frontmatter => {
+          restoreField(frontmatter, record.change.field, record.snapshot);
+        });
+      } catch (rollbackError) {
+        rollbackFailures.push(record.change.label);
+        console.error(`恢复「${record.change.label}」失败`, rollbackError);
+      }
+    }
+
+    const wrapped = new Error(failureLabel);
+    wrapped.cause = error;
+    wrapped.userMessage = rollbackFailures.length
+      ? `${failureLabel}，自动恢复未完成：${rollbackFailures.join("、")}。请检查${checkHint}`
+      : `${failureLabel}，本次修改已全部撤销`;
+    throw wrapped;
+  }
+};
+
 const plainText = value => {
   if (value === null || value === undefined || value === "") return "";
   if (value.path) return value.path.split("/").pop().replace(/\.md$/i, "");
@@ -240,12 +298,12 @@ const manageSeries = isSeries ? null : headerActions.createEl("button", {
   text: "管理系列",
   attr: { type: "button" }
 });
-const editOrder = header.createEl("button", {
-  cls: "media-collection-edit-order",
-  text: "管理成员",
+const manageMembers = header.createEl("button", {
+  cls: "media-collection-manage-members",
+  text: "管理作品",
   attr: { type: "button" }
 });
-headerActions.appendChild(editOrder);
+headerActions.appendChild(manageMembers);
 
 const openManageSeriesModal = () => {
   if (isSeries) return;
@@ -284,13 +342,23 @@ const openManageSeriesModal = () => {
   const footerActions = footer.createDiv({ cls: "media-collection-add-footer-actions" });
   const cancel = footerActions.createEl("button", { text: "取消", attr: { type: "button" } });
   const confirm = footerActions.createEl("button", { cls: "mod-cta", text: "保存", attr: { type: "button" } });
+  let isSaving = false;
 
   const closeModal = () => {
+    if (isSaving) return;
     document.removeEventListener("keydown", handleModalKeydown);
     overlay.remove();
   };
   const handleModalKeydown = event => {
     if (event.key === "Escape") closeModal();
+  };
+  const setModalSaving = saving => {
+    isSaving = saving;
+    overlay.setAttr("aria-busy", String(saving));
+    closeButton.disabled = saving;
+    cancel.disabled = saving;
+    search.disabled = saving;
+    for (const checkbox of list.querySelectorAll('input[type="checkbox"]')) checkbox.disabled = saving;
   };
   const updateSelection = () => selectionCount.setText(`已选择 ${selected.size} 个系列`);
   const renderCandidates = () => {
@@ -330,28 +398,43 @@ const openManageSeriesModal = () => {
     if (event.target === overlay) closeModal();
   });
   confirm.addEventListener("click", async () => {
+    if (isSaving) return;
     confirm.disabled = true;
     confirm.setText("正在保存…");
+    setModalSaving(true);
     try {
+      const changes = [];
       for (const group of seriesGroups) {
         const wasLinked = initiallyLinked.has(group.file.path);
         const shouldLink = selected.has(group.file.path);
         if (wasLinked === shouldLink) continue;
         const seriesFile = app.vault.getFileByPath(group.file.path);
-        if (!seriesFile) continue;
-        await app.fileManager.processFrontMatter(seriesFile, frontmatter => {
-          const existing = Array.isArray(frontmatter.collections)
-            ? [...frontmatter.collections]
-            : (frontmatter.collections ? [frontmatter.collections] : []);
-          const withoutCurrent = existing.filter(value => !pointsToCurrent(value));
-          frontmatter.collections = shouldLink ? [...withoutCurrent, currentGroupLink] : withoutCurrent;
+        if (!seriesFile) {
+          const missing = new Error(`没有找到系列文件：${group.file.path}`);
+          missing.userMessage = `无法保存：没有找到系列「${group.title || group.file.name}」的文件`;
+          throw missing;
+        }
+        changes.push({
+          file: seriesFile,
+          field: "collections",
+          label: group.title || group.file.name,
+          update: frontmatter => {
+            const existing = Array.isArray(frontmatter.collections)
+              ? [...frontmatter.collections]
+              : (frontmatter.collections ? [frontmatter.collections] : []);
+            const withoutCurrent = existing.filter(value => !pointsToCurrent(value));
+            frontmatter.collections = shouldLink ? [...withoutCurrent, currentGroupLink] : withoutCurrent;
+          }
         });
       }
+      await applyFrontmatterBatch(changes, "合集包含的系列保存失败", "这些系列的“所属合集”属性");
+      setModalSaving(false);
       closeModal();
-      if (typeof Notice === "function") new Notice(`已更新合集「${title}」包含的系列`);
+      showNotice(`已更新合集「${title}」包含的系列`);
     } catch (error) {
       console.error("更新合集系列失败", error);
-      if (typeof Notice === "function") new Notice("保存失败，请打开开发者控制台查看详情");
+      showNotice(error?.userMessage || "合集包含的系列保存失败，原内容未改变");
+      setModalSaving(false);
       confirm.disabled = false;
       confirm.setText("重新保存");
     }
@@ -420,8 +503,10 @@ const openAddWorksModal = () => {
     text: "添加",
     attr: { type: "button", disabled: "" }
   });
+  let isSaving = false;
 
   const closeModal = () => {
+    if (isSaving) return;
     document.removeEventListener("keydown", handleModalKeydown);
     overlay.remove();
   };
@@ -431,7 +516,19 @@ const openAddWorksModal = () => {
 
   const updateSelection = () => {
     selectionCount.setText(`已选择 ${selected.size} 部`);
-    confirm.disabled = selected.size === 0;
+    confirm.disabled = isSaving || selected.size === 0;
+  };
+
+  const setModalSaving = saving => {
+    isSaving = saving;
+    overlay.setAttr("aria-busy", String(saving));
+    closeButton.disabled = saving;
+    cancel.disabled = saving;
+    search.disabled = saving;
+    for (const checkbox of list.querySelectorAll('input[type="checkbox"]')) {
+      checkbox.disabled = saving || checkbox.dataset.blocked === "true";
+    }
+    updateSelection();
   };
 
   const renderCandidates = () => {
@@ -469,6 +566,7 @@ const openAddWorksModal = () => {
       const checkbox = row.createEl("input", { attr: { type: "checkbox" } });
       checkbox.checked = selected.has(work.file.path);
       checkbox.disabled = blocked;
+      checkbox.dataset.blocked = String(blocked);
 
       const copy = row.createDiv({ cls: "media-collection-add-item-copy" });
       copy.createDiv({ cls: "media-collection-add-item-title", text: work.title || work.file.name });
@@ -499,38 +597,49 @@ const openAddWorksModal = () => {
     if (event.target === overlay) closeModal();
   });
   confirm.addEventListener("click", async () => {
-    if (!selected.size) return;
+    if (!selected.size || isSaving) return;
     confirm.disabled = true;
     confirm.setText("正在添加…");
+    setModalSaving(true);
 
     try {
-      let added = 0;
-      for (const path of selected) {
+      const changes = [];
+      for (const path of [...selected]) {
         const workFile = app.vault.getFileByPath(path);
-        if (!workFile) continue;
-        await app.fileManager.processFrontMatter(workFile, frontmatter => {
-          if (isSeries) {
-            frontmatter.series = currentGroupLink;
-          } else {
-            const existing = Array.isArray(frontmatter.collections)
-              ? [...frontmatter.collections]
-              : (frontmatter.collections ? [frontmatter.collections] : []);
-            if (!existing.some(pointsToCurrent)) existing.push(currentGroupLink);
-            frontmatter.collections = existing;
+        const work = allWorks.find(candidate => candidate.file.path === path);
+        if (!workFile) {
+          const missing = new Error(`没有找到作品文件：${path}`);
+          missing.userMessage = `无法添加：没有找到作品「${work?.title || work?.file.name || path}」的文件`;
+          throw missing;
+        }
+        changes.push({
+          file: workFile,
+          field: isSeries ? "series" : "collections",
+          label: work?.title || work?.file.name || path,
+          update: frontmatter => {
+            if (isSeries) {
+              frontmatter.series = currentGroupLink;
+            } else {
+              const existing = Array.isArray(frontmatter.collections)
+                ? [...frontmatter.collections]
+                : (frontmatter.collections ? [frontmatter.collections] : []);
+              if (!existing.some(pointsToCurrent)) existing.push(currentGroupLink);
+              frontmatter.collections = existing;
+            }
           }
         });
-        added += 1;
       }
+      await applyFrontmatterBatch(changes, `添加作品到${kind}失败`, `这些作品的“${isSeries ? "系列" : "直接加入"}”属性`);
 
-      if (typeof Notice === "function") {
-        new Notice(`已将 ${added} 部作品添加到${kind}「${title}」`);
-      }
+      showNotice(`已将 ${changes.length} 部作品添加到${kind}「${title}」`);
+      setModalSaving(false);
       closeModal();
     } catch (error) {
       console.error(`添加作品到${kind}失败`, error);
-      if (typeof Notice === "function") new Notice("添加失败，请打开开发者控制台查看详情");
-      confirm.disabled = false;
+      showNotice(error?.userMessage || `添加作品到${kind}失败，原内容未改变`);
+      setModalSaving(false);
       confirm.setText("重新添加");
+      updateSelection();
     }
   });
 
@@ -541,11 +650,198 @@ const openAddWorksModal = () => {
 
 addWorks.addEventListener("click", openAddWorksModal);
 
-editOrder.addEventListener("click", () => {
-  const enteringManageMode = !root.classList.contains("is-managing");
-  root.classList.toggle("is-managing", enteringManageMode);
-  editOrder.setText(enteringManageMode ? "完成管理" : "管理成员");
-});
+const openManageMembersModal = () => {
+  const selected = new Set();
+  const overlay = document.body.createDiv({ cls: "media-collection-add-overlay modal-container" });
+  const modal = overlay.createDiv({
+    cls: "media-collection-add-modal modal",
+    attr: { role: "dialog", "aria-modal": "true", "aria-label": `管理${kind}「${title}」中的作品` }
+  });
+  const closeButton = modal.createEl("button", {
+    cls: "modal-close-button",
+    attr: { type: "button", "aria-label": "关闭" }
+  });
+  const closeIcon = closeButton.createSpan({ cls: "media-collection-add-close-icon" });
+  try {
+    if (typeof setIcon === "function") setIcon(closeIcon, "x");
+    else closeIcon.setText("×");
+  } catch (error) {
+    closeIcon.setText("×");
+  }
+
+  const contentEl = modal.createDiv({ cls: "modal-content" });
+  contentEl.createEl("h1", { cls: "modal-title", text: `管理「${title}」中的作品` });
+  contentEl.createDiv({
+    cls: "media-collection-add-description",
+    text: isSeries
+      ? "搜索并勾选要移出当前系列的作品，可以一次处理多部。"
+      : "搜索并勾选要移除直接归属的作品；灰色项由系列继承，请通过“管理系列”调整。"
+  });
+  const search = contentEl.createEl("input", {
+    cls: "media-collection-add-search",
+    attr: { type: "search", placeholder: "搜索当前作品…", "aria-label": "搜索当前作品" }
+  });
+  const list = contentEl.createDiv({
+    cls: "media-collection-add-list",
+    attr: { role: "list", "aria-label": "当前作品" }
+  });
+  const footer = contentEl.createDiv({ cls: "media-collection-add-footer" });
+  const selectionCount = footer.createSpan({ cls: "media-collection-add-count" });
+  const footerActions = footer.createDiv({ cls: "media-collection-add-footer-actions" });
+  const cancel = footerActions.createEl("button", { text: "取消", attr: { type: "button" } });
+  const confirm = footerActions.createEl("button", {
+    cls: "mod-warning",
+    text: "移出",
+    attr: { type: "button", disabled: "" }
+  });
+  let isSaving = false;
+
+  const closeModal = () => {
+    if (isSaving) return;
+    document.removeEventListener("keydown", handleModalKeydown);
+    overlay.remove();
+  };
+  const handleModalKeydown = event => {
+    if (event.key === "Escape") closeModal();
+  };
+  const updateSelection = () => {
+    const count = selected.size;
+    selectionCount.setText(count ? `已选择 ${count} 部待移出` : "尚未选择要移出的作品");
+    confirm.setText(isSaving ? "正在移出…" : (count ? `移出 ${count} 部` : "移出"));
+    confirm.disabled = isSaving || count === 0;
+  };
+  const setModalSaving = saving => {
+    isSaving = saving;
+    overlay.setAttr("aria-busy", String(saving));
+    closeButton.disabled = saving;
+    cancel.disabled = saving;
+    search.disabled = saving;
+    for (const checkbox of list.querySelectorAll('input[type="checkbox"]')) {
+      checkbox.disabled = saving || checkbox.dataset.blocked === "true";
+    }
+    updateSelection();
+  };
+
+  const renderMembers = () => {
+    list.empty();
+    const query = search.value.trim().toLocaleLowerCase("zh-Hans-CN");
+    const visible = members.filter(member => {
+      const inheritedFrom = isSeries ? [] : inheritedSeriesFor(member);
+      const isDirectMember = isSeries || toArray(member.collections).some(pointsToCurrent);
+      const origin = isDirectMember
+        ? (inheritedFrom.length ? "直接加入 系列继承" : (isSeries ? "当前系列" : "直接加入"))
+        : "系列继承";
+      const searchable = [
+        member.title,
+        member.file.name,
+        member.original_title,
+        typeLabels[member.media_type] || member.media_type,
+        yearText(member.release_date),
+        plainText(member.series),
+        origin
+      ].filter(Boolean).join(" ").toLocaleLowerCase("zh-Hans-CN");
+      return !query || searchable.includes(query);
+    });
+
+    if (!visible.length) {
+      list.createDiv({
+        cls: "media-collection-add-empty",
+        text: members.length ? "没有找到匹配的作品" : `当前${kind}还没有作品`
+      });
+      return;
+    }
+
+    for (const member of visible) {
+      const inheritedFrom = isSeries ? [] : inheritedSeriesFor(member);
+      const isDirectMember = isSeries || toArray(member.collections).some(pointsToCurrent);
+      const blocked = !isDirectMember;
+      const row = list.createEl("label", {
+        cls: `media-collection-add-item${blocked ? " is-disabled is-inherited" : ""}`,
+        attr: { role: "listitem" }
+      });
+      const checkbox = row.createEl("input", { attr: { type: "checkbox" } });
+      checkbox.checked = selected.has(member.file.path);
+      checkbox.disabled = blocked;
+      checkbox.dataset.blocked = String(blocked);
+
+      const copy = row.createDiv({ cls: "media-collection-add-item-copy" });
+      copy.createDiv({ cls: "media-collection-add-item-title", text: member.title || member.file.name });
+      const facts = [typeLabels[member.media_type] || member.media_type, yearText(member.release_date)].filter(Boolean);
+      if (blocked) {
+        facts.push(`继承自${inheritedFrom.map(group => group.title || group.file.name).join("、")} · 请通过“管理系列”调整`);
+      } else if (inheritedFrom.length) {
+        facts.push(`直接加入，同时继承自${inheritedFrom.map(group => group.title || group.file.name).join("、")}`);
+      } else {
+        facts.push(isSeries ? "当前系列作品" : "直接加入");
+      }
+      copy.createDiv({ cls: "media-collection-add-item-meta", text: facts.join(" · ") });
+
+      if (!blocked) {
+        checkbox.addEventListener("change", () => {
+          if (checkbox.checked) selected.add(member.file.path);
+          else selected.delete(member.file.path);
+          row.classList.toggle("is-selected", checkbox.checked);
+          updateSelection();
+        });
+      }
+      row.classList.toggle("is-selected", checkbox.checked);
+    }
+  };
+
+  search.addEventListener("input", renderMembers);
+  closeButton.addEventListener("click", closeModal);
+  cancel.addEventListener("click", closeModal);
+  overlay.addEventListener("click", event => {
+    if (event.target === overlay) closeModal();
+  });
+  confirm.addEventListener("click", async () => {
+    if (!selected.size || isSaving) return;
+    setModalSaving(true);
+    try {
+      const changes = [];
+      for (const path of [...selected]) {
+        const member = members.find(candidate => candidate.file.path === path);
+        const workFile = app.vault.getFileByPath(path);
+        if (!workFile) {
+          const missing = new Error(`没有找到作品文件：${path}`);
+          missing.userMessage = `无法移出：没有找到作品「${member?.title || member?.file.name || path}」的文件`;
+          throw missing;
+        }
+        changes.push({
+          file: workFile,
+          field: isSeries ? "series" : "collections",
+          label: member?.title || member?.file.name || path,
+          update: frontmatter => {
+            if (isSeries) {
+              if (pointsToCurrent(frontmatter.series)) frontmatter.series = "";
+              return;
+            }
+            const existing = Array.isArray(frontmatter.collections)
+              ? [...frontmatter.collections]
+              : (frontmatter.collections ? [frontmatter.collections] : []);
+            frontmatter.collections = existing.filter(value => !pointsToCurrent(value));
+          }
+        });
+      }
+
+      await applyFrontmatterBatch(changes, `从${kind}移出作品失败`, `这些作品的“${isSeries ? "系列" : "直接加入"}”属性`);
+      showNotice(`已从${kind}「${title}」移出 ${changes.length} 部作品`);
+      setModalSaving(false);
+      closeModal();
+    } catch (error) {
+      console.error(`从${kind}批量移出作品失败`, error);
+      showNotice(error?.userMessage || `从${kind}移出作品失败，原内容未改变`);
+      setModalSaving(false);
+    }
+  });
+
+  renderMembers();
+  updateSelection();
+  document.addEventListener("keydown", handleModalKeydown);
+  window.setTimeout(() => search.focus(), 0);
+};
+
+manageMembers.addEventListener("click", openManageMembersModal);
 
 const timeline = content.createDiv({ cls: "media-collection-timeline" });
 
@@ -603,64 +899,4 @@ members.forEach((member, index) => {
   open.setAttr("href", member.file.path);
   open.setAttr("data-href", member.file.path);
 
-  if (!isSeries && !isDirectMember) {
-    copy.createSpan({
-      cls: "media-collection-member-inherited-note",
-      text: "此作品由系列继承；请通过“管理系列”调整。"
-    });
-    return;
-  }
-
-  const removeLabel = isSeries ? "移出系列" : "移除直接归属";
-  const remove = copy.createEl("button", {
-    cls: "media-collection-member-remove",
-    text: removeLabel,
-    attr: { type: "button", "aria-label": `${removeLabel}：${member.title || member.file.name}` }
-  });
-  remove.addEventListener("click", async () => {
-    const workFile = app.vault.getFileByPath(member.file.path);
-    if (!workFile) {
-      if (typeof Notice === "function") new Notice("没有找到对应的作品文件");
-      return;
-    }
-
-    remove.disabled = true;
-    remove.setText("正在移出…");
-    try {
-      await app.fileManager.processFrontMatter(workFile, frontmatter => {
-        if (isSeries) {
-          if (pointsToCurrent(frontmatter.series)) frontmatter.series = "";
-          return;
-        }
-        const existing = Array.isArray(frontmatter.collections)
-          ? frontmatter.collections
-          : (frontmatter.collections ? [frontmatter.collections] : []);
-        frontmatter.collections = existing.filter(value => !pointsToCurrent(value));
-      });
-
-      if (!inheritedFrom.length) {
-        item.remove();
-        const remaining = timeline.querySelectorAll(".media-collection-member").length;
-        memberCount.setText(`${remaining} 部作品`);
-      } else {
-        remove.remove();
-        item.querySelector(".is-origin.is-direct")?.remove();
-        copy.createSpan({
-          cls: "media-collection-member-inherited-note",
-          text: "此作品仍由系列继承；请通过“管理系列”调整。"
-        });
-      }
-      if (typeof Notice === "function") {
-        const result = inheritedFrom.length
-          ? "已移除直接归属，作品仍通过系列保留在合集"
-          : `已将「${member.title || member.file.name}」${removeLabel}`;
-        new Notice(result);
-      }
-    } catch (error) {
-      console.error(`移出${kind}失败`, error);
-      if (typeof Notice === "function") new Notice("移出失败，请打开开发者控制台查看详情");
-      remove.disabled = false;
-      remove.setText(removeLabel);
-    }
-  });
 });

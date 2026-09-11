@@ -177,17 +177,20 @@ if (credits.length) info.createDiv({ cls: "media-work-credits", text: credits.jo
 
 const mediaFile = app.vault.getAbstractFileByPath(page.file.path);
 let frontmatterWriteQueue = Promise.resolve();
+let liveFinishedAt = dateText(page.finished_at);
 
-const writeFields = values => {
-  if (!mediaFile) return Promise.resolve();
+const writeFrontmatter = updater => {
+  if (!mediaFile) return Promise.reject(new Error(`没有找到作品文件：${page.file.path}`));
   const task = frontmatterWriteQueue
     .catch(() => undefined)
-    .then(() => app.fileManager.processFrontMatter(mediaFile, frontmatter => {
-      for (const [field, value] of Object.entries(values)) frontmatter[field] = value;
-    }));
+    .then(() => app.fileManager.processFrontMatter(mediaFile, updater));
   frontmatterWriteQueue = task;
   return task;
 };
+
+const writeFields = values => writeFrontmatter(frontmatter => {
+  for (const [field, value] of Object.entries(values)) frontmatter[field] = value;
+});
 
 const writeField = async (field, value) => writeFields({ [field]: value });
 
@@ -232,6 +235,7 @@ const mountRating = host => {
   let savedRating = typeof page.rating === "number" ? clamp(Math.round(page.rating * 2) / 2, 0, 5) : 0;
   let previewRating = savedRating;
   let pointerActive = false;
+  let isSaving = false;
 
   const stars = host.createDiv({ cls: "media-rating-stars" });
   const starElements = [];
@@ -266,6 +270,15 @@ const mountRating = host => {
     stars.setAttr("aria-valuenow", String(value));
     stars.setAttr("aria-valuetext", value > 0 ? `${value} 星` : "未评分");
     clearButton.classList.toggle("is-visible", savedRating > 0);
+    clearButton.disabled = isSaving;
+  };
+
+  const setSaving = saving => {
+    isSaving = saving;
+    host.classList.toggle("is-saving", saving);
+    stars.setAttr("aria-busy", String(saving));
+    stars.setAttr("aria-disabled", String(saving));
+    clearButton.disabled = saving;
   };
 
   const ratingFromPointer = event => {
@@ -275,13 +288,35 @@ const mountRating = host => {
   };
 
   const commit = async value => {
-    savedRating = clamp(Math.round(value * 2) / 2, 0, 5);
-    render(savedRating);
-    personalNumber.setText(savedRating > 0 ? String(savedRating) : "—");
-    await writeField("rating", savedRating > 0 ? savedRating : null);
+    if (isSaving) return false;
+    const previous = savedRating;
+    const next = clamp(Math.round(value * 2) / 2, 0, 5);
+    if (next === previous) {
+      render(previous);
+      return true;
+    }
+
+    savedRating = next;
+    render(next);
+    personalNumber.setText(next > 0 ? String(next) : "—");
+    setSaving(true);
+    try {
+      await writeField("rating", next > 0 ? next : null);
+      return true;
+    } catch (error) {
+      console.error("评分保存失败", error);
+      savedRating = previous;
+      render(previous);
+      personalNumber.setText(previous > 0 ? String(previous) : "—");
+      showNotice(`评分保存失败，已恢复为${previous > 0 ? ` ${previous} 星` : "未评分"}`);
+      return false;
+    } finally {
+      setSaving(false);
+    }
   };
 
   stars.addEventListener("pointermove", event => {
+    if (isSaving) return;
     render(ratingFromPointer(event), true);
   });
 
@@ -290,6 +325,7 @@ const mountRating = host => {
   });
 
   stars.addEventListener("pointerdown", event => {
+    if (isSaving) return;
     pointerActive = true;
     stars.setPointerCapture?.(event.pointerId);
     render(ratingFromPointer(event), true);
@@ -304,6 +340,7 @@ const mountRating = host => {
   });
 
   stars.addEventListener("keydown", event => {
+    if (isSaving) return;
     let next = savedRating;
     if (event.key === "ArrowRight" || event.key === "ArrowUp") next = clamp(savedRating + 0.5, 0.5, 5);
     else if (event.key === "ArrowLeft" || event.key === "ArrowDown") next = clamp(savedRating - 0.5, 0, 5);
@@ -316,6 +353,7 @@ const mountRating = host => {
 
   clearButton.addEventListener("click", event => {
     event.stopPropagation();
+    if (isSaving) return;
     void commit(0);
   });
 
@@ -345,6 +383,10 @@ const mountProgress = host => {
   if (hasTotal) savedProgress = Math.min(savedProgress, total);
   let currentStatus = page.status;
   let statusControl = null;
+  let isSaving = false;
+  let pendingProgress = null;
+  let statusWasDisabled = false;
+  let statusNeedsSync = false;
 
   const label = host.previousElementSibling;
   if (label?.tagName === "STRONG") {
@@ -388,10 +430,15 @@ const mountProgress = host => {
   const track = host.createSpan({ cls: `media-progress-track${hasTotal ? "" : " is-unknown"}` });
   const fill = track.createSpan({ cls: "media-progress-fill" });
   const output = host.createEl("output", { cls: "media-progress-output" });
+  const completeButton = host.createEl("button", {
+    cls: "media-progress-complete",
+    text: "标记完成",
+    attr: { type: "button", "aria-label": "确认将状态设为已完成" }
+  });
   const hint = host.createSpan({
     cls: "media-progress-hint",
     text: hasTotal
-      ? "状态设为已完成会补满进度；从满值减少会恢复为进行中"
+      ? "进度满后可确认完成；状态设为已完成也会补满进度；从满值减少会恢复为进行中"
       : `缺少总${config.unit === "页" ? "页数" : config.unit === "集" ? "集数" : "时长"}，暂时无法自动补满`
   });
 
@@ -403,14 +450,35 @@ const mountProgress = host => {
     input.value = String(current);
     fill.style.width = `${percent}%`;
     output.setText(hasTotal ? `${Math.round(percent)}%` : "—");
-    decrement.disabled = current <= 0;
-    increment.disabled = hasTotal && current >= total;
+    decrement.disabled = isSaving || current <= 0;
+    increment.disabled = isSaving || (hasTotal && current >= total);
+    input.disabled = isSaving;
+    const canComplete = hasTotal && current >= total && currentStatus !== "已完成";
+    completeButton.hidden = !canComplete;
+    completeButton.disabled = isSaving || !canComplete;
     return current;
   };
 
+  const setSaving = saving => {
+    isSaving = saving;
+    host.classList.toggle("is-saving", saving);
+    host.setAttr("aria-busy", String(saving));
+    if (statusControl) {
+      if (saving) statusWasDisabled = statusControl.disabled;
+      statusControl.disabled = saving || statusWasDisabled;
+    }
+    render(savedProgress);
+  };
+
   const commit = async value => {
+    if (isSaving) {
+      pendingProgress = value;
+      return false;
+    }
+    const previousProgress = savedProgress;
+    const previousStatus = currentStatus;
     const next = render(value);
-    if (next === savedProgress) return;
+    if (next === previousProgress) return true;
     savedProgress = next;
     const updates = { [config.field]: savedProgress };
     const shouldResume = hasTotal && savedProgress < total && currentStatus === "已完成";
@@ -419,8 +487,27 @@ const mountProgress = host => {
       updates.status = currentStatus;
       if (statusControl) statusControl.value = currentStatus;
     }
-    await writeFields(updates);
-    if (shouldResume) showNotice("进度未满，状态已恢复为进行中");
+    setSaving(true);
+    try {
+      await writeFields(updates);
+      if (shouldResume) showNotice("进度未满，状态已恢复为进行中");
+      return true;
+    } catch (error) {
+      console.error("进度保存失败", error);
+      savedProgress = previousProgress;
+      currentStatus = previousStatus;
+      render(previousProgress);
+      if (shouldResume && statusControl) statusControl.value = previousStatus;
+      showNotice(`进度保存失败，已恢复为 ${previousProgress}${config.unit}`);
+      return false;
+    } finally {
+      setSaving(false);
+      if (pendingProgress !== null) {
+        const queued = pendingProgress;
+        pendingProgress = null;
+        window.setTimeout(() => void commit(queued), 0);
+      }
+    }
   };
 
   decrement.addEventListener("click", () => void commit(savedProgress - config.step));
@@ -435,16 +522,56 @@ const mountProgress = host => {
     }
   });
 
+  completeButton.addEventListener("click", async () => {
+    if (isSaving || !hasTotal || savedProgress < total || currentStatus === "已完成") return;
+    const previousStatus = currentStatus;
+    let completionDate = liveFinishedAt;
+    let shouldRecordDate = false;
+    setSaving(true);
+    try {
+      await writeFrontmatter(frontmatter => {
+        completionDate = dateText(frontmatter.finished_at) || localToday();
+        shouldRecordDate = !dateText(frontmatter.finished_at);
+        frontmatter.status = "已完成";
+        if (shouldRecordDate) frontmatter.finished_at = completionDate;
+      });
+      currentStatus = "已完成";
+      liveFinishedAt = completionDate;
+      if (statusControl) statusControl.value = currentStatus;
+      else statusNeedsSync = true;
+      const callout = host.closest('.callout[data-callout="media-control"]');
+      callout?.dispatchEvent(new CustomEvent("media-progress-status-saved", {
+        detail: { status: currentStatus, finishedAt: completionDate }
+      }));
+      render(savedProgress);
+      showNotice(shouldRecordDate ? "已标记为已完成，并记录完成日期" : "已标记为已完成");
+    } catch (error) {
+      console.error("完成状态保存失败", error);
+      currentStatus = previousStatus;
+      if (statusControl) statusControl.value = previousStatus;
+      render(savedProgress);
+      showNotice(`状态保存失败，仍保持为“${plainText(previousStatus) || "原状态"}”`);
+    } finally {
+      setSaving(false);
+    }
+  });
+
   const attachCompletionSync = () => {
     const callout = host.closest('.callout[data-callout="media-control"]');
     const statusSelect = Array.from(callout?.querySelectorAll("select") || []).find(select =>
       Array.from(select.options || []).some(option => option.value === "已完成"));
     if (!statusSelect || statusSelect.dataset.mediaProgressSync === "true") return false;
     statusControl = statusSelect;
-    currentStatus = statusSelect.value || currentStatus;
+    if (statusNeedsSync) {
+      statusControl.value = currentStatus;
+      statusNeedsSync = false;
+    } else {
+      currentStatus = statusSelect.value || currentStatus;
+    }
     statusSelect.dataset.mediaProgressSync = "true";
     statusSelect.addEventListener("change", () => {
       currentStatus = statusSelect.value;
+      render(savedProgress);
       if (statusSelect.value !== "已完成") return;
       if (!hasTotal) {
         showNotice(`缺少总${config.unit === "页" ? "页数" : config.unit === "集" ? "集数" : "时长"}，无法自动补满进度`);
@@ -517,6 +644,7 @@ const mountDateControls = note => {
       renderClear();
       try {
         await writeField(field, normalized || null);
+        if (field === "finished_at") liveFinishedAt = normalized;
         return true;
       } catch (error) {
         console.error(`日期字段 ${field} 保存失败`, error);
@@ -541,6 +669,14 @@ const mountDateControls = note => {
 
   createField("started_at", labels.started);
   createField("finished_at", labels.finished);
+
+  callout.addEventListener("media-progress-status-saved", event => {
+    if (event.detail?.status !== "已完成") return;
+    const finishedAt = String(event.detail.finishedAt || "");
+    values.finished_at = finishedAt;
+    controls.finished_at.input.value = finishedAt;
+    controls.finished_at.input.dispatchEvent(new Event("input"));
+  });
 
   const recordDateForStatus = (field, labelText) => {
     if (values[field] || pendingDates.has(field)) return;

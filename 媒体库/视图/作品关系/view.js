@@ -45,6 +45,14 @@ let currentCollections = toArray(page.collections);
 let currentRelated = toArray(page.related);
 const root = dv.container.createDiv({ cls: "media-work-relations-editor" });
 
+const showNotice = message => {
+  if (typeof Notice === "function") new Notice(message);
+};
+
+const showSaveError = (error, fallback) => {
+  showNotice(error?.userMessage || fallback);
+};
+
 const setButtonIcon = (button, iconName, fallback) => {
   const icon = button.createSpan({ cls: "media-work-relation-icon" });
   try {
@@ -98,16 +106,58 @@ const writeRelations = async updater => {
   await app.fileManager.processFrontMatter(workFile, updater);
 };
 
-const updateRelatedSide = async (targetWork, sourceWork, shouldLink) => {
-  const targetFile = app.vault.getFileByPath(targetWork.file.path);
-  if (!targetFile) throw new Error(`没有找到作品文件：${targetWork.file.path}`);
+const cloneValue = value => {
+  if (Array.isArray(value)) return value.map(cloneValue);
+  if (value && typeof value === "object") return { ...value };
+  return value;
+};
 
-  await app.fileManager.processFrontMatter(targetFile, frontmatter => {
-    const existing = normalizeLinks(frontmatter.related, workFor, workLink)
-      .filter(value => !matchesWork(value, sourceWork));
-    if (shouldLink) existing.push(workLink(sourceWork));
-    frontmatter.related = existing;
-  });
+const snapshotField = (frontmatter, field) => ({
+  exists: Object.prototype.hasOwnProperty.call(frontmatter, field),
+  value: cloneValue(frontmatter[field])
+});
+
+const restoreField = (frontmatter, field, snapshot) => {
+  if (snapshot.exists) frontmatter[field] = cloneValue(snapshot.value);
+  else delete frontmatter[field];
+};
+
+const applyFrontmatterBatch = async (changes, failureLabel) => {
+  const attempted = [];
+  try {
+    for (const change of changes) {
+      let record = null;
+      try {
+        await app.fileManager.processFrontMatter(change.file, frontmatter => {
+          record = { change, snapshot: snapshotField(frontmatter, change.field) };
+          change.update(frontmatter);
+        });
+      } catch (error) {
+        if (record) attempted.push(record);
+        throw error;
+      }
+      attempted.push(record);
+    }
+  } catch (error) {
+    const rollbackFailures = [];
+    for (const record of [...attempted].reverse()) {
+      try {
+        await app.fileManager.processFrontMatter(record.change.file, frontmatter => {
+          restoreField(frontmatter, record.change.field, record.snapshot);
+        });
+      } catch (rollbackError) {
+        rollbackFailures.push(record.change.label);
+        console.error(`恢复「${record.change.label}」失败`, rollbackError);
+      }
+    }
+
+    const wrapped = new Error(failureLabel);
+    wrapped.cause = error;
+    wrapped.userMessage = rollbackFailures.length
+      ? `${failureLabel}，自动恢复未完成：${rollbackFailures.join("、")}。请检查这些作品的“相关作品”属性`
+      : `${failureLabel}，本次修改已撤销`;
+    throw wrapped;
+  }
 };
 
 const setRelatedWorks = async nextRelated => {
@@ -118,18 +168,53 @@ const setRelatedWorks = async nextRelated => {
   const after = nextRelated.map(workFor).filter(Boolean);
   const beforePaths = new Set(before.map(work => work.file.path));
   const afterPaths = new Set(after.map(work => work.file.path));
+  const changes = [];
 
-  await writeRelations(frontmatter => {
-    frontmatter.related = after.map(workLink);
+  if (!workFile) throw new Error("没有找到当前作品文件");
+  changes.push({
+    file: workFile,
+    field: "related",
+    label: currentWork.title || currentWork.file.name,
+    next: after.map(workLink),
+    update: frontmatter => { frontmatter.related = after.map(workLink); }
   });
 
   for (const target of after) {
-    if (!beforePaths.has(target.file.path)) await updateRelatedSide(target, currentWork, true);
+    if (beforePaths.has(target.file.path)) continue;
+    const targetFile = app.vault.getFileByPath(target.file.path);
+    if (!targetFile) throw new Error(`没有找到作品文件：${target.file.path}`);
+    const change = {
+      file: targetFile,
+      field: "related",
+      label: target.title || target.file.name,
+      update: null
+    };
+    change.update = frontmatter => {
+      const next = normalizeLinks(frontmatter.related, workFor, workLink)
+        .filter(value => !matchesWork(value, currentWork));
+      next.push(workLink(currentWork));
+      frontmatter.related = next;
+    };
+    changes.push(change);
   }
   for (const target of before) {
-    if (!afterPaths.has(target.file.path)) await updateRelatedSide(target, currentWork, false);
+    if (afterPaths.has(target.file.path)) continue;
+    const targetFile = app.vault.getFileByPath(target.file.path);
+    if (!targetFile) throw new Error(`没有找到作品文件：${target.file.path}`);
+    const change = {
+      file: targetFile,
+      field: "related",
+      label: target.title || target.file.name,
+      update: null
+    };
+    change.update = frontmatter => {
+      frontmatter.related = normalizeLinks(frontmatter.related, workFor, workLink)
+        .filter(value => !matchesWork(value, currentWork));
+    };
+    changes.push(change);
   }
 
+  await applyFrontmatterBatch(changes, "相关作品保存失败");
   currentRelated = after.map(workLink);
 };
 
@@ -206,7 +291,7 @@ const openPicker = ({ kind, options, excluded = [], onChoose }) => {
           close();
         } catch (error) {
           console.error(`更新${kind}失败`, error);
-          if (typeof Notice === "function") new Notice(`更新${kind}失败，请打开开发者控制台查看详情`);
+          showSaveError(error, `更新${kind}失败，原内容未改变`);
           option.disabled = false;
         }
       });
@@ -248,7 +333,7 @@ const createLinkChip = ({ host, value, kind, onRemove, inherited = false }) => {
       await onRemove();
     } catch (error) {
       console.error(`移除${kind}失败`, error);
-      if (typeof Notice === "function") new Notice(`移除${kind}失败，请打开开发者控制台查看详情`);
+      showSaveError(error, `移除${kind}失败，原内容未改变`);
       remove.disabled = false;
     }
   });
@@ -275,7 +360,7 @@ const createWorkLinkChip = ({ host, value, onRemove }) => {
       await onRemove();
     } catch (error) {
       console.error("移除相关作品失败", error);
-      if (typeof Notice === "function") new Notice("移除相关作品失败，请打开开发者控制台查看详情");
+      showSaveError(error, "移除相关作品失败，原关联关系未改变");
       remove.disabled = false;
     }
   });
