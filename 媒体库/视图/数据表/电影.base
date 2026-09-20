@@ -21,7 +21,7 @@ properties:
   started_at:
     displayName: 开始观看
   finished_at:
-    displayName: 观影日期
+    displayName: 看完日期
   formula.rating_label:
     displayName: 我的评分
   formula.progress_label:

@@ -16,6 +16,8 @@
     "added_at": "date",
     "started_at": "date",
     "finished_at": "date",
+    "last_activity_at": "date",
+    "experience_index": "number",
     "series": "text",
     "sequence": "number",
     "collections": "multitext",
@@ -47,6 +49,19 @@
     "current_minutes": "number",
     "progress_percent": "number",
     "collection_kind": "text",
-    "created_at": "date"
+    "created_at": "date",
+    "work": "text",
+    "result": "text",
+    "record_origin": "text",
+    "date_certainty": "text",
+    "ended_at": "date",
+    "progress_value": "number",
+    "progress_total": "number",
+    "progress_unit": "text",
+    "experience_rating": "number",
+    "edition": "text",
+    "played_on": "multitext",
+    "year_verified": "checkbox",
+    "verified_year": "number"
   }
 }

@@ -54,11 +54,36 @@ const typeMeta = {
   }
 };
 
-const meta = typeMeta[currentName];
+const libraryMeta = {
+  全部作品: {
+    mode: "all",
+    label: "全部作品",
+    unit: "部",
+    subtitle: "在同一处浏览、搜索和筛选媒体库中的所有作品。",
+    pending: "待体验",
+    active: "进行中"
+  },
+  待体验: {
+    mode: "pending",
+    label: "待体验",
+    unit: "部",
+    subtitle: "从还没有开始的作品中，找到下一部想读、想看或想玩的内容。",
+    pending: "待体验",
+    active: "进行中"
+  }
+};
+
+const meta = typeMeta[currentName] || libraryMeta[currentName];
 if (!meta) {
   dv.paragraph("无法识别当前媒体类别。");
   return;
 }
+
+const metaForPage = page => Object.values(typeMeta).find(item => item.type === page.media_type) || {
+  type: page.media_type || "media",
+  label: "作品",
+  active: "进行中"
+};
 
 const toArray = value => {
   if (!value) return [];
@@ -103,7 +128,8 @@ const coverUrl = page => {
 };
 
 const progressFor = page => {
-  if (meta.type === "book") {
+  const mediaType = page.media_type || meta.type;
+  if (mediaType === "book") {
     const currentPage = numberFrom(page.current_page);
     const total = numberFrom(page.page_count);
     return {
@@ -112,7 +138,7 @@ const progressFor = page => {
       known: total > 0
     };
   }
-  if (meta.type === "tv" || meta.type === "anime") {
+  if (mediaType === "tv" || mediaType === "anime") {
     const currentEpisode = numberFrom(page.current_episode);
     const total = numberFrom(page.episode_count);
     return {
@@ -121,7 +147,7 @@ const progressFor = page => {
       known: total > 0
     };
   }
-  if (meta.type === "movie") {
+  if (mediaType === "movie") {
     const currentMinutes = numberFrom(page.current_minutes);
     const total = numberFrom(page.runtime_minutes);
     return {
@@ -130,7 +156,7 @@ const progressFor = page => {
       known: total > 0
     };
   }
-  if (meta.type === "game") {
+  if (mediaType === "game") {
     const percent = Math.max(0, Math.min(100, numberFrom(page.progress_percent)));
     return { percent, label: `${percent}%`, known: true };
   }
@@ -157,7 +183,9 @@ const setAppIcon = (element, name) => {
 };
 
 const allItems = dv.pages('"媒体库/作品"')
-  .where(page => page.note_type === "media" && page.media_type === meta.type)
+  .where(page => page.note_type === "media"
+    && (!meta.type || page.media_type === meta.type)
+    && (meta.mode !== "pending" || page.status === "待体验"))
   .array();
 
 const state = {
@@ -167,7 +195,7 @@ const state = {
   view: "grid"
 };
 
-const root = dv.container.createDiv({ cls: `media-category-page is-${meta.type}` });
+const root = dv.container.createDiv({ cls: `media-category-page is-${meta.type || meta.mode}` });
 const header = root.createDiv({ cls: "media-category-header" });
 const headerCopy = header.createDiv({ cls: "media-category-header-copy" });
 addInternalLink(headerCopy, "媒体库/首页", "← 媒体库", "media-category-back");
@@ -178,23 +206,30 @@ headerCopy.createDiv({ cls: "media-category-subtitle", text: meta.subtitle });
 
 const headerActions = header.createDiv({ cls: "media-category-header-actions" });
 headerActions.createSpan({ cls: "media-category-count", text: `${allItems.length} ${meta.unit}` });
-const addButton = headerActions.createEl("button", { cls: "media-category-add", attr: { type: "button" } });
-const addIcon = addButton.createSpan({ cls: "media-category-add-icon" });
-setAppIcon(addIcon, "plus");
-addButton.createSpan({ text: meta.add });
-addButton.addEventListener("click", () => {
-  app.commands.executeCommandById(`quickadd:choice:${meta.quickAddChoiceId}`);
-});
+if (meta.quickAddChoiceId) {
+  const addButton = headerActions.createEl("button", { cls: "media-category-add", attr: { type: "button" } });
+  const addIcon = addButton.createSpan({ cls: "media-category-add-icon" });
+  setAppIcon(addIcon, "plus");
+  addButton.createSpan({ text: meta.add });
+  addButton.addEventListener("click", () => {
+    app.commands.executeCommandById(`quickadd:choice:${meta.quickAddChoiceId}`);
+  });
+}
 
 const toolbar = root.createDiv({ cls: "media-category-toolbar" });
 const filters = toolbar.createDiv({ cls: "media-category-filters", attr: { role: "tablist", "aria-label": "筛选作品" } });
-const filterDefs = [
-  ["all", "全部", () => true],
-  ["pending", meta.pending, page => page.status === "待体验"],
-  ["active", meta.active, page => page.status === "进行中"],
-  ["finished", "已完成", page => page.status === "已完成"],
-  ["high", "高分", page => typeof page.rating === "number" && page.rating >= 4]
-];
+const filterDefs = meta.mode === "pending"
+  ? [
+      ["all", "全部", () => true],
+      ...Object.values(typeMeta).map(item => [item.type, item.label, page => page.media_type === item.type])
+    ]
+  : [
+      ["all", "全部", () => true],
+      ["pending", meta.pending, page => page.status === "待体验"],
+      ["active", meta.active, page => page.status === "进行中"],
+      ["finished", "已完成", page => page.status === "已完成"],
+      ["high", "高分", page => typeof page.rating === "number" && page.rating >= 4]
+    ];
 
 const tools = toolbar.createDiv({ cls: "media-category-tools" });
 const searchWrap = tools.createDiv({ cls: "media-category-search" });
@@ -249,7 +284,8 @@ const compareItems = (a, b) => {
 };
 
 const renderCard = page => {
-  const card = gallery.createEl("a", { cls: "media-category-card internal-link" });
+  const itemMeta = metaForPage(page);
+  const card = gallery.createEl("a", { cls: `media-category-card internal-link is-${itemMeta.type}` });
   card.setAttr("data-href", page.file.path);
   card.setAttr("href", page.file.path);
   card.setAttr("aria-label", `打开 ${titleFor(page)}`);
@@ -260,13 +296,13 @@ const renderCard = page => {
     const image = cover.createEl("img", { attr: { src: coverPath, alt: `${titleFor(page)}封面`, loading: "lazy" } });
     image.addEventListener("error", () => {
       image.remove();
-      cover.createSpan({ cls: "media-category-cover-fallback", text: meta.label });
+      cover.createSpan({ cls: "media-category-cover-fallback", text: itemMeta.label });
     });
   } else {
-    cover.createSpan({ cls: "media-category-cover-fallback", text: meta.label });
+    cover.createSpan({ cls: "media-category-cover-fallback", text: itemMeta.label });
   }
 
-  if (page.status === "进行中") cover.createSpan({ cls: "media-category-cover-state", text: meta.active });
+  if (page.status === "进行中") cover.createSpan({ cls: "media-category-cover-state", text: itemMeta.active });
 
   const copy = card.createDiv({ cls: "media-category-card-copy" });
   copy.createDiv({ cls: "media-category-card-title", text: titleFor(page) });
@@ -278,7 +314,7 @@ const renderCard = page => {
   const statusRow = copy.createDiv({ cls: "media-category-card-status" });
   const status = statusRow.createSpan({ cls: `media-category-status is-${page.status || "unset"}` });
   status.createSpan({ cls: "media-category-status-dot" });
-  status.createSpan({ text: page.status === "进行中" ? meta.active : (page.status || "未设置") });
+  status.createSpan({ text: page.status === "进行中" ? itemMeta.active : (page.status || "未设置") });
   if (typeof page.rating === "number" && page.rating > 0) {
     statusRow.createSpan({ cls: "media-category-rating", text: `★ ${page.rating.toFixed(1)}` });
   } else if (page.status === "进行中") {
@@ -303,7 +339,8 @@ const render = () => {
   gallery.empty();
   gallery.toggleClass("is-list", state.view === "list");
   empty.toggleClass("is-visible", visible.length === 0);
-  empty.setText(state.query ? `没有找到与“${search.value.trim()}”匹配的${meta.label}。` : `这个分类下暂时没有${meta.label}。`);
+  const emptyLabel = meta.mode ? "作品" : meta.label;
+  empty.setText(state.query ? `没有找到与“${search.value.trim()}”匹配的${emptyLabel}。` : `这里暂时没有${emptyLabel}。`);
   for (const page of visible) renderCard(page);
 };
 

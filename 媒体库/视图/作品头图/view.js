@@ -178,6 +178,7 @@ if (credits.length) info.createDiv({ cls: "media-work-credits", text: credits.jo
 const mediaFile = app.vault.getAbstractFileByPath(page.file.path);
 let frontmatterWriteQueue = Promise.resolve();
 let liveFinishedAt = dateText(page.finished_at);
+let liveExperienceIndex = Math.max(1, Math.round(Number(page.experience_index)) || 1);
 
 const writeFrontmatter = updater => {
   if (!mediaFile) return Promise.reject(new Error(`没有找到作品文件：${page.file.path}`));
@@ -200,6 +201,14 @@ const numberFrom = value => {
   if (typeof value === "number") return Number.isFinite(value) ? value : 0;
   const match = String(value ?? "").replaceAll(",", "").match(/\d+(?:\.\d+)?/);
   return match ? Number(match[0]) : 0;
+};
+
+const progressConfigs = {
+  book: { field: "current_page", totalField: "page_count", unit: "页", historyUnit: "page", step: 1 },
+  tv: { field: "current_episode", totalField: "episode_count", unit: "集", historyUnit: "episode", step: 1 },
+  movie: { field: "current_minutes", totalField: "runtime_minutes", unit: "分", historyUnit: "minute", step: 10 },
+  anime: { field: "current_episode", totalField: "episode_count", unit: "集", historyUnit: "episode", step: 1 },
+  game: { field: "progress_percent", totalField: null, unit: "%", historyUnit: "percent", step: 5, fixedTotal: 100 }
 };
 
 const setAppIcon = (element, name, fallback) => {
@@ -300,15 +309,31 @@ const mountRating = host => {
     render(next);
     personalNumber.setText(next > 0 ? String(next) : "—");
     setSaving(true);
+    let workSaved = false;
     try {
       await writeField("rating", next > 0 ? next : null);
+      workSaved = true;
+      await syncEndedSnapshot();
       return true;
     } catch (error) {
       console.error("评分保存失败", error);
+      let rollbackFailed = false;
+      if (workSaved) {
+        try {
+          await writeField("rating", previous > 0 ? previous : null);
+        } catch (rollbackError) {
+          rollbackFailed = true;
+          console.error("评分同步失败，且作品评分回滚失败", rollbackError);
+        }
+      }
+      if (rollbackFailed) {
+        showNotice("作品评分已修改，但当前体验记录同步失败，请重试");
+        return false;
+      }
       savedRating = previous;
       render(previous);
       personalNumber.setText(previous > 0 ? String(previous) : "—");
-      showNotice(`评分保存失败，已恢复为${previous > 0 ? ` ${previous} 星` : "未评分"}`);
+      showNotice(`评分与当前记录同步失败，已恢复为${previous > 0 ? ` ${previous} 星` : "未评分"}`);
       return false;
     } finally {
       setSaving(false);
@@ -357,6 +382,14 @@ const mountRating = host => {
     void commit(0);
   });
 
+  const ratingCallout = host.closest('.callout[data-callout="media-control"]');
+  ratingCallout?.addEventListener("media-experience-started", () => {
+    savedRating = 0;
+    previewRating = 0;
+    render(0);
+    personalNumber.setText("—");
+  });
+
   render(savedRating);
 };
 
@@ -364,14 +397,7 @@ const mountProgress = host => {
   host.empty();
   host.addClass("is-ready");
 
-  const configs = {
-    book: { field: "current_page", totalField: "page_count", unit: "页", step: 1 },
-    tv: { field: "current_episode", totalField: "episode_count", unit: "集", step: 1 },
-    movie: { field: "current_minutes", totalField: "runtime_minutes", unit: "分", step: 10 },
-    anime: { field: "current_episode", totalField: "episode_count", unit: "集", step: 1 },
-    game: { field: "progress_percent", totalField: null, unit: "%", step: 5, fixedTotal: 100 }
-  };
-  const config = configs[page.media_type];
+  const config = progressConfigs[page.media_type];
   if (!config) {
     host.remove();
     return;
@@ -470,32 +496,56 @@ const mountProgress = host => {
     render(savedProgress);
   };
 
-  const commit = async value => {
+  const commit = async (value, options = {}) => {
     if (isSaving) {
       pendingProgress = value;
       return false;
     }
     const previousProgress = savedProgress;
     const previousStatus = currentStatus;
+    const previousFinishedAt = liveFinishedAt;
     const next = render(value);
     if (next === previousProgress) return true;
     savedProgress = next;
-    const updates = { [config.field]: savedProgress };
+    const updates = {
+      [config.field]: savedProgress,
+      experience_index: liveExperienceIndex
+    };
+    if (options.recordActivity !== false) updates.last_activity_at = localToday();
     const shouldResume = hasTotal && savedProgress < total && currentStatus === "已完成";
     if (shouldResume) {
       currentStatus = "进行中";
       updates.status = currentStatus;
+      updates.finished_at = null;
       if (statusControl) statusControl.value = currentStatus;
     }
     setSaving(true);
     try {
       await writeFields(updates);
-      if (shouldResume) showNotice("进度未满，状态已恢复为进行中");
+      if (shouldResume) {
+        await withdrawExperienceSnapshot(liveExperienceIndex);
+        liveFinishedAt = "";
+        const callout = host.closest('.callout[data-callout="media-control"]');
+        callout?.dispatchEvent(new CustomEvent("media-experience-reopened"));
+        showNotice("已重新打开当前记录，状态恢复为进行中");
+      } else if (currentStatus === "已完成" || currentStatus === "弃置") {
+        await syncEndedSnapshot();
+      }
       return true;
     } catch (error) {
       console.error("进度保存失败", error);
+      try {
+        await writeFields({
+          [config.field]: previousProgress,
+          status: previousStatus,
+          finished_at: previousFinishedAt || null
+        });
+      } catch (rollbackError) {
+        console.error("进度回滚失败", rollbackError);
+      }
       savedProgress = previousProgress;
       currentStatus = previousStatus;
+      liveFinishedAt = previousFinishedAt;
       render(previousProgress);
       if (shouldResume && statusControl) statusControl.value = previousStatus;
       showNotice(`进度保存失败，已恢复为 ${previousProgress}${config.unit}`);
@@ -532,7 +582,9 @@ const mountProgress = host => {
       await writeFrontmatter(frontmatter => {
         completionDate = dateText(frontmatter.finished_at) || localToday();
         shouldRecordDate = !dateText(frontmatter.finished_at);
+        frontmatter.experience_index = experienceIndexFrom(frontmatter.experience_index);
         frontmatter.status = "已完成";
+        frontmatter.last_activity_at = dateText(frontmatter.last_activity_at) || completionDate;
         if (shouldRecordDate) frontmatter.finished_at = completionDate;
       });
       currentStatus = "已完成";
@@ -584,13 +636,22 @@ const mountProgress = host => {
 
   render(savedProgress);
   if (!attachCompletionSync()) window.setTimeout(attachCompletionSync, 180);
-  if (page.status === "已完成" && hasTotal && savedProgress < total) void commit(total);
+  const progressCallout = host.closest('.callout[data-callout="media-control"]');
+  progressCallout?.addEventListener("media-experience-started", () => {
+    savedProgress = 0;
+    pendingProgress = null;
+    currentStatus = "进行中";
+    if (statusControl) statusControl.value = currentStatus;
+    else statusNeedsSync = true;
+    render(savedProgress);
+  });
+  if (page.status === "已完成" && hasTotal && savedProgress < total) void commit(total, { recordActivity: false });
 };
 
 const dateLabels = {
   book: { started: "开始阅读", finished: "读完日期" },
   tv: { started: "开始追剧", finished: "看完日期" },
-  movie: { started: "开始观看", finished: "观影日期" },
+  movie: { started: "开始观看", finished: "看完日期" },
   anime: { started: "开始追番", finished: "看完日期" },
   game: { started: "开始游玩", finished: "通关日期" }
 };
@@ -601,6 +662,197 @@ const localToday = () => {
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+};
+
+const experienceLabels = {
+  book: { noun: "阅读", next: "开始重读" },
+  tv: { noun: "观看", next: "开始重看" },
+  movie: { noun: "观看", next: "开始重看" },
+  anime: { noun: "观看", next: "开始重看" },
+  game: { noun: "游玩", next: "开始重玩" }
+};
+
+const experienceIndexFrom = value => Math.max(1, Math.round(numberFrom(value)) || 1);
+
+const linkTarget = value => {
+  const raw = value?.path ?? String(value || "");
+  return raw.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].replace(/\.md$/i, "");
+};
+
+const experienceFiles = () => app.vault.getMarkdownFiles().filter(file => file.path.startsWith("媒体库/记录/"));
+
+const experienceFrontmatter = file => app.metadataCache.getFileCache(file)?.frontmatter || {};
+
+const experienceBelongsToWork = (file, frontmatter) => {
+  if (frontmatter.note_type !== "media_experience") return false;
+  const target = linkTarget(frontmatter.work);
+  const resolved = target ? app.metadataCache.getFirstLinkpathDest(target, file.path) : null;
+  return resolved?.path === page.file.path || `${target}.md` === page.file.path || target === page.file.path;
+};
+
+const experienceMatchesWork = (file, frontmatter, index) =>
+  experienceBelongsToWork(file, frontmatter) && experienceIndexFrom(frontmatter.experience_index) === index;
+
+const findExperienceFile = index => experienceFiles().find(file =>
+  experienceMatchesWork(file, experienceFrontmatter(file), index));
+
+const ensureFolder = async folderPath => {
+  let current = "";
+  for (const part of folderPath.split("/").filter(Boolean)) {
+    current = current ? `${current}/${part}` : part;
+    if (!app.vault.getAbstractFileByPath(current)) {
+      try {
+        await app.vault.createFolder(current);
+      } catch (error) {
+        if (!app.vault.getAbstractFileByPath(current)) throw error;
+      }
+    }
+  }
+};
+
+const yamlText = value => JSON.stringify(String(value ?? ""));
+
+const historyProgress = frontmatter => {
+  const config = progressConfigs[page.media_type];
+  if (!config) return { value: 0, total: 0, unit: "percent" };
+  const total = config.fixedTotal ?? Math.max(0, Math.round(numberFrom(frontmatter[config.totalField])));
+  const value = Math.max(0, Math.round(numberFrom(frontmatter[config.field])));
+  return {
+    value: total > 0 ? Math.min(value, total) : value,
+    total,
+    unit: config.historyUnit
+  };
+};
+
+const createExperienceContent = data => {
+  const label = experienceLabels[page.media_type]?.noun || "体验";
+  const workPath = page.file.path.replace(/\.md$/i, "");
+  const rating = numberFrom(data.experience_rating);
+  return `---\nnote_type: media_experience\nwork: ${yamlText(`[[${workPath}|${page.title || page.file.name}]]`)}\nexperience_index: ${data.experience_index}\nresult: ${data.result}\nrecord_origin: ${data.record_origin}\ndate_certainty: ${data.date_certainty}\nyear_verified: ${data.year_verified}\nverified_year: ${data.verified_year || ""}\nstarted_at: ${data.started_at || ""}\nended_at: ${data.ended_at || ""}\nprogress_value: ${data.progress_value}\nprogress_total: ${data.progress_total || ""}\nprogress_unit: ${data.progress_unit}\nexperience_rating: ${rating > 0 ? rating : "null"}\nedition: ${data.edition ? yamlText(data.edition) : ""}\nplayed_on: []\ncreated_at: ${data.created_at}\ncssclasses:\n  - media-library-page\n---\n\n# ${page.title || page.file.name} · 第 ${data.experience_index} 次${label}\n\n[[${workPath}|← 返回作品]]\n\n## 本次记录\n\n\`\`\`dataviewjs\nawait dv.view("媒体库/视图/体验记录")\n\`\`\`\n\n`;
+};
+
+const upsertExperienceSnapshot = async (frontmatter, result, options = {}) => {
+  const origin = options.origin
+    || (Object.prototype.hasOwnProperty.call(frontmatter, "experience_index") ? "tracked" : "migrated");
+  const migrated = origin === "migrated";
+  const index = experienceIndexFrom(frontmatter.experience_index);
+  const progress = historyProgress(frontmatter);
+  let file = findExperienceFile(index);
+  const existing = file ? experienceFrontmatter(file) : {};
+  const endedAt = migrated
+    ? dateText(frontmatter.finished_at)
+    : result === "completed"
+    ? (dateText(frontmatter.finished_at) || dateText(existing.ended_at) || localToday())
+    : (dateText(existing.ended_at) || localToday());
+  const startedAt = dateText(frontmatter.started_at);
+  const verifiedYear = migrated ? 0 : Number(endedAt.slice(0, 4));
+  const data = {
+    experience_index: index,
+    result,
+    record_origin: origin,
+    date_certainty: migrated ? (endedAt ? "approximate" : "unknown") : "exact",
+    year_verified: !migrated,
+    verified_year: verifiedYear,
+    started_at: startedAt,
+    ended_at: endedAt,
+    progress_value: progress.value,
+    progress_total: progress.total,
+    progress_unit: progress.unit,
+    experience_rating: frontmatter.rating,
+    edition: frontmatter.edition,
+    created_at: localToday()
+  };
+
+  if (!file) {
+    const year = !migrated && /^\d{4}/.test(endedAt) ? endedAt.slice(0, 4) : "待确认";
+    const folder = `媒体库/记录/${year}`;
+    await ensureFolder(folder);
+    const safeName = page.file.name.replace(/[\\/:*?"<>|#\[\]]/g, "-");
+    const path = `${folder}/${safeName} · 第${index}次.md`;
+    file = app.vault.getAbstractFileByPath(path);
+    if (!file) file = await app.vault.create(path, createExperienceContent(data));
+  }
+
+  await app.fileManager.processFrontMatter(file, snapshot => {
+    snapshot.note_type = "media_experience";
+    snapshot.work = `[[${page.file.path.replace(/\.md$/i, "")}|${page.title || page.file.name}]]`;
+    snapshot.experience_index = index;
+    snapshot.result = result;
+    if (!snapshot.record_origin) snapshot.record_origin = origin;
+    if (snapshot.record_origin === "tracked") {
+      snapshot.date_certainty = "exact";
+      snapshot.year_verified = true;
+      snapshot.verified_year = Number(endedAt.slice(0, 4));
+    } else {
+      if (!snapshot.date_certainty) snapshot.date_certainty = "approximate";
+      if (snapshot.year_verified !== true) snapshot.year_verified = false;
+      if (!snapshot.year_verified) snapshot.verified_year = null;
+    }
+    snapshot.started_at = startedAt || null;
+    snapshot.ended_at = endedAt;
+    snapshot.progress_value = progress.value;
+    snapshot.progress_total = progress.total || null;
+    snapshot.progress_unit = progress.unit;
+    snapshot.experience_rating = numberFrom(frontmatter.rating) > 0 ? numberFrom(frontmatter.rating) : null;
+    if (!Object.prototype.hasOwnProperty.call(snapshot, "edition")) snapshot.edition = frontmatter.edition || null;
+    if (!Array.isArray(snapshot.played_on)) snapshot.played_on = [];
+    if (!snapshot.created_at) snapshot.created_at = localToday();
+  });
+
+  return file;
+};
+
+const finalizeExperience = async result => {
+  let data = {};
+  let origin = "tracked";
+  await writeFrontmatter(frontmatter => {
+    if (!Object.prototype.hasOwnProperty.call(frontmatter, "experience_index")) origin = "migrated";
+    const index = experienceIndexFrom(frontmatter.experience_index);
+    frontmatter.experience_index = index;
+    liveExperienceIndex = index;
+    if (result === "completed") {
+      const config = progressConfigs[page.media_type];
+      const total = config ? (config.fixedTotal ?? Math.max(0, Math.round(numberFrom(frontmatter[config.totalField])))) : 0;
+      frontmatter.status = "已完成";
+      if (total > 0) frontmatter[config.field] = total;
+      frontmatter.finished_at = dateText(frontmatter.finished_at) || (origin === "migrated" ? null : localToday());
+      frontmatter.last_activity_at = dateText(frontmatter.last_activity_at) || frontmatter.finished_at || null;
+      liveFinishedAt = dateText(frontmatter.finished_at);
+    } else {
+      frontmatter.status = "弃置";
+      frontmatter.finished_at = null;
+      frontmatter.last_activity_at = dateText(frontmatter.last_activity_at) || localToday();
+      liveFinishedAt = "";
+    }
+    data = { ...frontmatter };
+  });
+  return upsertExperienceSnapshot(data, result, { origin });
+};
+
+const syncEndedSnapshot = async () => {
+  let data = {};
+  await writeFrontmatter(frontmatter => {
+    data = { ...frontmatter };
+  });
+  if (data.status === "已完成") return upsertExperienceSnapshot(data, "completed");
+  if (data.status === "弃置") return upsertExperienceSnapshot(data, "abandoned");
+  return null;
+};
+
+const withdrawExperienceSnapshot = async index => {
+  const file = findExperienceFile(index);
+  if (!file) return false;
+  if (typeof app.fileManager.trashFile === "function") await app.fileManager.trashFile(file);
+  else await app.vault.trash(file, true);
+  return true;
+};
+
+const refreshDataview = () => {
+  try {
+    app.workspace.trigger("dataview:refresh-views");
+  } catch (error) {
+    console.error("刷新作品页失败", error);
+  }
 };
 
 const mountDateControls = note => {
@@ -645,13 +897,22 @@ const mountDateControls = note => {
       try {
         await writeField(field, normalized || null);
         if (field === "finished_at") liveFinishedAt = normalized;
+        if (field === "started_at" || (field === "finished_at" && normalized)) {
+          await syncEndedSnapshot();
+        }
         return true;
       } catch (error) {
-        console.error(`日期字段 ${field} 保存失败`, error);
+        console.error(`日期字段 ${field} 与当前记录同步失败`, error);
+        try {
+          await writeField(field, previous || null);
+        } catch (rollbackError) {
+          console.error(`日期字段 ${field} 回滚失败`, rollbackError);
+        }
         values[field] = previous;
         input.value = previous;
+        if (field === "finished_at") liveFinishedAt = previous;
         renderClear();
-        showNotice(`${labelText}保存失败，请稍后重试`);
+        showNotice(`${labelText}与当前记录同步失败，已恢复原值`);
         return false;
       }
     };
@@ -675,6 +936,28 @@ const mountDateControls = note => {
     const finishedAt = String(event.detail.finishedAt || "");
     values.finished_at = finishedAt;
     controls.finished_at.input.value = finishedAt;
+    controls.finished_at.input.dispatchEvent(new Event("input"));
+  });
+
+  callout.addEventListener("media-experience-reopened", () => {
+    values.finished_at = "";
+    controls.finished_at.input.value = "";
+    controls.finished_at.input.dispatchEvent(new Event("input"));
+  });
+
+  callout.addEventListener("media-finished-date-cleared", () => {
+    values.finished_at = "";
+    controls.finished_at.input.value = "";
+    controls.finished_at.input.dispatchEvent(new Event("input"));
+  });
+
+  callout.addEventListener("media-experience-started", event => {
+    const startedAt = String(event.detail?.startedAt || localToday());
+    values.started_at = startedAt;
+    values.finished_at = "";
+    controls.started_at.input.value = startedAt;
+    controls.finished_at.input.value = "";
+    controls.started_at.input.dispatchEvent(new Event("input"));
     controls.finished_at.input.dispatchEvent(new Event("input"));
   });
 
@@ -709,12 +992,257 @@ const mountDateControls = note => {
   if (!attachStatusSync()) window.setTimeout(attachStatusSync, 180);
 };
 
+const mountExperienceHistory = note => {
+  const callout = note.querySelector('.callout[data-callout="media-control"]');
+  const content = callout?.querySelector(".callout-content");
+  if (!content || content.querySelector(".media-experience-section")) return;
+
+  const labels = experienceLabels[page.media_type] || { noun: "体验", next: "开始下一次体验" };
+  let currentIndex = liveExperienceIndex;
+  let liveStatus = page.status || "待体验";
+  let isBusy = false;
+
+  const section = content.createDiv({ cls: "media-experience-section" });
+  const header = section.createDiv({ cls: "media-experience-header" });
+  const identity = header.createDiv({ cls: "media-experience-identity" });
+  identity.createSpan({ cls: "media-experience-label", text: "体验记录" });
+  const currentBadge = identity.createSpan({ cls: "media-experience-current" });
+
+  const actions = header.createDiv({ cls: "media-experience-actions" });
+  const nextButton = actions.createEl("button", {
+    cls: "media-experience-next",
+    text: labels.next,
+    attr: { type: "button" }
+  });
+
+  const confirmation = section.createDiv({ cls: "media-experience-confirm" });
+  confirmation.hidden = true;
+  const confirmationText = confirmation.createSpan();
+  const confirmationButtons = confirmation.createDiv({ cls: "media-experience-confirm-actions" });
+  const cancelButton = confirmationButtons.createEl("button", {
+    cls: "media-experience-cancel",
+    text: "取消",
+    attr: { type: "button" }
+  });
+  const confirmButton = confirmationButtons.createEl("button", {
+    cls: "media-experience-confirm-button",
+    text: "确认开始",
+    attr: { type: "button" }
+  });
+
+  const history = section.createDiv({ cls: "media-experience-history" });
+
+  const recordsForWork = () => experienceFiles()
+    .map(file => ({ file, frontmatter: experienceFrontmatter(file) }))
+    .filter(record => experienceBelongsToWork(record.file, record.frontmatter))
+    .sort((left, right) => experienceIndexFrom(right.frontmatter.experience_index) - experienceIndexFrom(left.frontmatter.experience_index));
+
+  const openRecord = (file, event) => {
+    event.preventDefault();
+    void app.workspace.openLinkText(file.path, page.file.path, false);
+  };
+
+  const renderHistory = () => {
+    currentBadge.setText(`第 ${currentIndex} 次${labels.noun}`);
+    const ended = liveStatus === "已完成" || liveStatus === "弃置";
+    nextButton.hidden = !ended;
+    nextButton.disabled = isBusy;
+    history.empty();
+
+    const records = recordsForWork();
+    if (!records.length) {
+      const empty = history.createDiv({ cls: "media-experience-empty" });
+      empty.createSpan({ text: ended ? "当前记录尚未写入历史，可重试保存或直接开始下一次。" : "完成或弃置当前体验后，会在这里生成历史记录。" });
+      if (ended) {
+        const retry = empty.createEl("button", {
+          cls: "media-experience-retry",
+          text: "重试保存",
+          attr: { type: "button" }
+        });
+        retry.disabled = isBusy;
+        retry.addEventListener("click", async () => {
+          if (isBusy) return;
+          isBusy = true;
+          renderHistory();
+          try {
+            await finalizeExperience(liveStatus === "弃置" ? "abandoned" : "completed");
+            window.setTimeout(renderHistory, 180);
+            showNotice("历史记录已保存");
+          } catch (error) {
+            console.error("历史记录保存失败", error);
+            showNotice("历史记录保存失败，作品当前状态未受影响");
+          } finally {
+            isBusy = false;
+            window.setTimeout(renderHistory, 220);
+          }
+        });
+      }
+      return;
+    }
+
+    for (const record of records) {
+      const meta = record.frontmatter;
+      const index = experienceIndexFrom(meta.experience_index);
+      const item = history.createDiv({ cls: "media-experience-item" });
+      const main = item.createEl("a", {
+        cls: "media-experience-open",
+        text: `第 ${index} 次${labels.noun}`,
+        href: record.file.path
+      });
+      main.addEventListener("click", event => openRecord(record.file, event));
+      const resultLabel = meta.result === "abandoned" ? "已弃置" : "已完成";
+      const dates = [dateText(meta.started_at), dateText(meta.ended_at)].filter(Boolean);
+      const certainty = String(meta.date_certainty || "");
+      const yearVerified = meta.year_verified === true;
+      const verifiedYear = Math.round(numberFrom(meta.verified_year));
+      const dateRange = dates.join(" — ");
+      const dateLabel = dateRange
+        ? (!yearVerified
+          ? `${dateRange}（待确认）`
+          : (certainty === "approximate" ? `${verifiedYear || "年份"} 已确认，具体日期约` : dateRange))
+        : (!yearVerified ? "日期未知（待确认）" : `${verifiedYear || "年份"} 已确认，具体日期未知`);
+      const details = [resultLabel, dateLabel].filter(Boolean);
+      const rating = numberFrom(meta.experience_rating);
+      if (rating > 0) details.push(`${rating} 星`);
+      item.createDiv({ cls: "media-experience-meta", text: details.join(" · ") });
+    }
+  };
+
+  const setBusy = busy => {
+    isBusy = busy;
+    section.classList.toggle("is-saving", busy);
+    nextButton.disabled = busy;
+    cancelButton.disabled = busy;
+    confirmButton.disabled = busy;
+  };
+
+  nextButton.addEventListener("click", () => {
+    confirmationText.setText(`将保存第 ${currentIndex} 次${labels.noun}，并清空当前评分、进度和本次日期。`);
+    confirmation.hidden = false;
+    nextButton.hidden = true;
+  });
+
+  cancelButton.addEventListener("click", () => {
+    confirmation.hidden = true;
+    renderHistory();
+  });
+
+  confirmButton.addEventListener("click", async () => {
+    if (isBusy || (liveStatus !== "已完成" && liveStatus !== "弃置")) return;
+    setBusy(true);
+    try {
+      const result = liveStatus === "弃置" ? "abandoned" : "completed";
+      await finalizeExperience(result);
+      const today = localToday();
+      let nextIndex = currentIndex + 1;
+      await writeFrontmatter(frontmatter => {
+        const actualIndex = experienceIndexFrom(frontmatter.experience_index);
+        nextIndex = actualIndex + 1;
+        frontmatter.experience_index = nextIndex;
+        frontmatter.status = "进行中";
+        frontmatter.rating = null;
+        frontmatter.started_at = today;
+        frontmatter.finished_at = null;
+        frontmatter.last_activity_at = today;
+        const config = progressConfigs[page.media_type];
+        if (config) frontmatter[config.field] = 0;
+      });
+      currentIndex = nextIndex;
+      liveExperienceIndex = nextIndex;
+      liveStatus = "进行中";
+      liveFinishedAt = "";
+      callout.dispatchEvent(new CustomEvent("media-experience-started", {
+        detail: { experienceIndex: nextIndex, startedAt: today }
+      }));
+      confirmation.hidden = true;
+      setBusy(false);
+      renderHistory();
+      showNotice(`已开始第 ${nextIndex} 次${labels.noun}`);
+      refreshDataview();
+    } catch (error) {
+      console.error("开始下一次体验失败", error);
+      showNotice("开始下一次体验失败，原有记录和进度保持不变");
+      setBusy(false);
+      renderHistory();
+    }
+  });
+
+  const syncEndedExperience = async result => {
+    if (isBusy) return;
+    setBusy(true);
+    renderHistory();
+    try {
+      await new Promise(resolve => window.setTimeout(resolve, 360));
+      await finalizeExperience(result);
+      liveStatus = result === "completed" ? "已完成" : "弃置";
+      currentIndex = liveExperienceIndex;
+      if (result === "abandoned") callout.dispatchEvent(new CustomEvent("media-finished-date-cleared"));
+      window.setTimeout(renderHistory, 180);
+    } catch (error) {
+      console.error("体验历史保存失败", error);
+      showNotice("当前状态已保存，但体验历史保存失败，可在记录区重试");
+    } finally {
+      setBusy(false);
+      window.setTimeout(renderHistory, 180);
+    }
+  };
+
+  callout.addEventListener("media-progress-status-saved", event => {
+    if (event.detail?.status !== "已完成") return;
+    liveStatus = "已完成";
+    void syncEndedExperience("completed");
+  });
+
+  callout.addEventListener("media-experience-reopened", () => {
+    liveStatus = "进行中";
+    window.setTimeout(renderHistory, 160);
+  });
+
+  const attachStatusSync = () => {
+    const statusSelect = Array.from(callout.querySelectorAll("select")).find(select =>
+      Array.from(select.options || []).some(option => option.value === "已完成"));
+    if (!statusSelect || statusSelect.dataset.mediaExperienceSync === "true") return false;
+    statusSelect.dataset.mediaExperienceSync = "true";
+    statusSelect.addEventListener("change", async () => {
+      const previousStatus = liveStatus;
+      const nextStatus = statusSelect.value;
+      liveStatus = nextStatus;
+      renderHistory();
+      if (nextStatus === "已完成") {
+        void syncEndedExperience("completed");
+        return;
+      }
+      if (nextStatus === "弃置") {
+        void syncEndedExperience("abandoned");
+        return;
+      }
+      if (previousStatus !== "已完成" && previousStatus !== "弃置") return;
+      try {
+        if (previousStatus === "已完成") {
+          await writeField("finished_at", null);
+          liveFinishedAt = "";
+        }
+        await withdrawExperienceSnapshot(currentIndex);
+        callout.dispatchEvent(new CustomEvent("media-experience-reopened"));
+      } catch (error) {
+        console.error("撤销当前体验快照失败", error);
+        showNotice("重新打开当前记录失败，请稍后重试");
+      }
+    });
+    return true;
+  };
+
+  renderHistory();
+  if (!attachStatusSync()) window.setTimeout(attachStatusSync, 180);
+};
+
 const mountInteractiveControls = () => {
   const note = dv.container.closest(".media-library-note");
   if (!note) return;
   note.querySelectorAll(".media-rating-control:not(.is-ready)").forEach(mountRating);
   note.querySelectorAll(".media-progress-control:not(.is-ready)").forEach(mountProgress);
   mountDateControls(note);
+  mountExperienceHistory(note);
 };
 
 window.requestAnimationFrame(() => window.requestAnimationFrame(mountInteractiveControls));

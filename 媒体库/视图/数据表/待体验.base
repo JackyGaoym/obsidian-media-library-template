@@ -1,0 +1,31 @@
+filters:
+  and:
+    - file.inFolder("媒体库/作品")
+    - note_type == "media"
+    - status == "待体验"
+formulas:
+  overview: if(media_type == "book", "图书", if(media_type == "tv", "电视剧", if(media_type == "movie", "电影", if(media_type == "anime", "动漫", "游戏")))) + " · " + if(release_date, release_date.toString().slice(0, 4), "年份未知")
+  added_label: if(added_at, "加入 · " + added_at.format("YYYY/MM/DD"), "加入时间未知")
+properties:
+  title:
+    displayName: 作品
+  formula.overview:
+    displayName: "\u200B"
+  formula.added_label:
+    displayName: "\u200B"
+views:
+  - type: cards
+    name: 待体验
+    order:
+      - title
+      - formula.overview
+      - formula.added_label
+    sort:
+      - property: added_at
+        direction: DESC
+      - property: file.mtime
+        direction: DESC
+    image: cover
+    imageFit: contain
+    imageAspectRatio: 1.5
+    cardSize: 170
