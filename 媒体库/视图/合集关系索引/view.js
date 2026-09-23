@@ -1,3 +1,5 @@
+await dv.view("媒体库/视图/主题");
+
 const toArray = value => {
   if (!value) return [];
   if (Array.isArray(value)) return value;

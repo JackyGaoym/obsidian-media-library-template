@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "enabled": [
+    "book",
+    "tv",
+    "movie",
+    "anime",
+    "game"
+  ],
+  "order": [
+    "book",
+    "tv",
+    "movie",
+    "anime",
+    "game",
+    "variety",
+    "documentary"
+  ],
+  "customTypes": []
+}

@@ -354,6 +354,8 @@
 .media-search-card.is-movie { --media-search-accent: #e45b5b; }
 .media-search-card.is-anime { --media-search-accent: #34a9d6; }
 .media-search-card.is-game { --media-search-accent: #50c985; }
+.media-search-card.is-variety { --media-search-accent: #e56bb3; }
+.media-search-card.is-documentary { --media-search-accent: #6f8fe8; }
 
 .media-search-card:hover {
   border-color: color-mix(in srgb, var(--media-search-accent) 54%, var(--media-card-border));
@@ -649,9 +651,9 @@
   font-size: 1.15em;
 }
 
-.media-history-audit-stat.is-pending strong { color: #e2ad63; }
-.media-history-audit-stat.is-exact strong { color: #65cf91; }
-.media-history-audit-stat.is-year strong { color: #68b9dd; }
+.media-history-audit-stat.is-pending strong { color: var(--media-warning); }
+.media-history-audit-stat.is-exact strong { color: var(--media-success); }
+.media-history-audit-stat.is-year strong { color: var(--media-info); }
 
 .media-history-audit-guide {
   margin-top: 12px;
@@ -714,11 +716,11 @@
 }
 
 .media-history-audit-card.is-exact {
-  border-color: color-mix(in srgb, #65cf91 35%, var(--background-modifier-border));
+  border-color: color-mix(in srgb, var(--media-success) 35%, var(--background-modifier-border));
 }
 
 .media-history-audit-card.is-approximate {
-  border-color: color-mix(in srgb, #68b9dd 35%, var(--background-modifier-border));
+  border-color: color-mix(in srgb, var(--media-info) 35%, var(--background-modifier-border));
 }
 
 .media-history-audit-card-top {
@@ -760,13 +762,13 @@
 }
 
 .media-history-audit-card.is-exact .media-history-audit-state {
-  background: color-mix(in srgb, #65cf91 12%, var(--background-secondary));
-  color: #65cf91;
+  background: color-mix(in srgb, var(--media-success) 12%, var(--background-secondary));
+  color: var(--media-success);
 }
 
 .media-history-audit-card.is-approximate .media-history-audit-state {
-  background: color-mix(in srgb, #68b9dd 12%, var(--background-secondary));
-  color: #68b9dd;
+  background: color-mix(in srgb, var(--media-info) 12%, var(--background-secondary));
+  color: var(--media-info);
 }
 
 .media-history-audit-date-label {
@@ -914,33 +916,33 @@
 
 .media-experience-detail-badge.is-completed,
 .media-experience-detail-badge.is-exact {
-  border-color: color-mix(in srgb, #65cf91 34%, var(--background-modifier-border));
-  background: color-mix(in srgb, #65cf91 9%, var(--background-secondary));
-  color: #65cf91;
+  border-color: color-mix(in srgb, var(--media-success) 34%, var(--background-modifier-border));
+  background: color-mix(in srgb, var(--media-success) 9%, var(--background-secondary));
+  color: var(--media-success);
 }
 
 .media-experience-detail-badge.is-abandoned {
   border-color: color-mix(in srgb, #e28a75 34%, var(--background-modifier-border));
   background: color-mix(in srgb, #e28a75 9%, var(--background-secondary));
-  color: #e49a88;
+  color: var(--media-danger);
 }
 
 .media-experience-detail-badge.is-year {
-  border-color: color-mix(in srgb, #68b9dd 34%, var(--background-modifier-border));
-  background: color-mix(in srgb, #68b9dd 9%, var(--background-secondary));
-  color: #68b9dd;
+  border-color: color-mix(in srgb, var(--media-info) 34%, var(--background-modifier-border));
+  background: color-mix(in srgb, var(--media-info) 9%, var(--background-secondary));
+  color: var(--media-info);
 }
 
 .media-experience-detail-badge.is-pending {
-  border-color: color-mix(in srgb, #e2ad63 34%, var(--background-modifier-border));
-  background: color-mix(in srgb, #e2ad63 9%, var(--background-secondary));
-  color: #e2ad63;
+  border-color: color-mix(in srgb, var(--media-warning) 34%, var(--background-modifier-border));
+  background: color-mix(in srgb, var(--media-warning) 9%, var(--background-secondary));
+  color: var(--media-warning);
 }
 
 .media-experience-detail-badge.is-cross-year {
-  border-color: color-mix(in srgb, #c99cff 38%, var(--background-modifier-border));
-  background: color-mix(in srgb, #c99cff 10%, var(--background-secondary));
-  color: #c99cff;
+  border-color: color-mix(in srgb, var(--media-special) 38%, var(--background-modifier-border));
+  background: color-mix(in srgb, var(--media-special) 10%, var(--background-secondary));
+  color: var(--media-special);
 }
 
 .media-experience-detail-edit,
@@ -1008,7 +1010,7 @@
 }
 
 .media-experience-detail-note.is-pending {
-  border-left-color: #e2ad63;
+  border-left-color: var(--media-warning);
 }
 
 .media-experience-detail-note a {
@@ -1091,8 +1093,9 @@
   }
 }
 
-/* Homepage: softened blue-charcoal archive palette for clearer dark-mode depth. */
-.media-library-home {
+/* Media-library appearance can follow Obsidian or be pinned independently. */
+body[data-media-library-theme="dark"] :is(.media-library-home, .media-library-page, .media-library-note),
+body.theme-dark:not([data-media-library-theme]) :is(.media-library-home, .media-library-page, .media-library-note) {
   --background-primary: #12161b;
   --background-primary-alt: #161b21;
   --background-secondary: #1a2027;
@@ -1112,13 +1115,53 @@
   --media-card-border: #303946;
   --media-card-bg: #1a2027;
   --media-muted: #a0a8b3;
+  --media-type-text-mix: white;
+  --media-success: #65cf91;
+  --media-warning: #e2ad63;
+  --media-info: #68b9dd;
+  --media-danger: #e49a88;
+  --media-special: #c99cff;
+  --media-rating: #ffb76c;
   color: var(--text-normal);
   background: var(--background-primary);
   color-scheme: dark;
 }
 
-.media-library-home .markdown-preview-sizer,
-.media-library-home .cm-sizer {
+body[data-media-library-theme="light"] :is(.media-library-home, .media-library-page, .media-library-note),
+body.theme-light:not([data-media-library-theme]) :is(.media-library-home, .media-library-page, .media-library-note) {
+  --background-primary: #f7f8fa;
+  --background-primary-alt: #f0f2f5;
+  --background-secondary: #eef1f4;
+  --background-secondary-alt: #e6eaf0;
+  --background-modifier-border: #d5dbe3;
+  --background-modifier-border-hover: #bfc7d2;
+  --background-modifier-hover: #e9edf2;
+  --background-modifier-active-hover: #e0e5ec;
+  --background-modifier-box-shadow: #8b95a3;
+  --text-normal: #20262f;
+  --text-muted: #5f6975;
+  --text-faint: #67737f;
+  --text-accent: #5647c8;
+  --text-accent-hover: #4739b3;
+  --interactive-accent: #6657dd;
+  --interactive-accent-hover: #5849ca;
+  --text-on-accent: #ffffff;
+  --media-card-border: #d5dbe3;
+  --media-card-bg: #ffffff;
+  --media-muted: #5f6975;
+  --media-type-text-mix: #16202a;
+  --media-success: #237f49;
+  --media-warning: #93601d;
+  --media-info: #246f9c;
+  --media-danger: #a44f40;
+  --media-special: #6846aa;
+  --media-rating: #9a5a0a;
+  color: var(--text-normal);
+  background: var(--background-primary);
+  color-scheme: light;
+}
+
+:is(.media-library-home, .media-library-page, .media-library-note) :is(.markdown-preview-sizer, .cm-sizer) {
   background: var(--background-primary);
 }
 
@@ -1137,6 +1180,7 @@
   .media-home-type,
   .media-home-active-type,
   .media-home-active-item,
+  .media-home-backlog-chip,
   .media-home-poster-visual
 ).is-book {
   --media-type-color: #d9a33e;
@@ -1147,6 +1191,7 @@
   .media-home-type,
   .media-home-active-type,
   .media-home-active-item,
+  .media-home-backlog-chip,
   .media-home-poster-visual
 ).is-tv {
   --media-type-color: #9b7cf3;
@@ -1157,6 +1202,7 @@
   .media-home-type,
   .media-home-active-type,
   .media-home-active-item,
+  .media-home-backlog-chip,
   .media-home-poster-visual
 ).is-movie {
   --media-type-color: #e45b5b;
@@ -1167,6 +1213,7 @@
   .media-home-type,
   .media-home-active-type,
   .media-home-active-item,
+  .media-home-backlog-chip,
   .media-home-poster-visual
 ).is-anime {
   --media-type-color: #34a9d6;
@@ -1177,6 +1224,7 @@
   .media-home-type,
   .media-home-active-type,
   .media-home-active-item,
+  .media-home-backlog-chip,
   .media-home-poster-visual
 ).is-game {
   --media-type-color: #50c985;
@@ -1221,12 +1269,14 @@
 
 .media-home-identity h1 {
   position: relative;
+  flex: 0 0 auto;
   margin: 0;
   padding-left: 14px;
   font-size: clamp(1.75rem, 3vw, 2.35rem);
   font-weight: 760;
   letter-spacing: -0.035em;
   line-height: 1.1;
+  white-space: nowrap;
 }
 
 .media-home-identity h1::before,
@@ -1324,11 +1374,64 @@
 
 .media-home-utilities {
   display: flex;
-  gap: 12px;
+  align-items: center;
+  gap: 8px;
   padding-left: 14px;
   border-left: 1px solid var(--media-card-border);
   font-size: var(--font-ui-small);
   white-space: nowrap;
+}
+
+.media-home-theme-control,
+.media-home-utility-button {
+  position: relative;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--media-card-border);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--background-secondary) 62%, transparent);
+  color: var(--text-muted);
+}
+
+.media-home-theme-icon,
+.media-home-theme-icon svg,
+.media-home-utility-icon,
+.media-home-utility-icon svg {
+  width: 15px;
+  height: 15px;
+  pointer-events: none;
+}
+
+.media-home-theme-select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0 !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.media-home-theme-control:has(.media-home-theme-select:focus-visible) {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 2px;
+}
+
+.media-home-utilities .media-home-utility-button {
+  color: var(--text-muted) !important;
+}
+
+.media-home-theme-control:hover,
+.media-home-utilities .media-home-utility-button:hover {
+  border-color: color-mix(in srgb, var(--text-accent) 66%, transparent);
+  color: var(--text-accent) !important;
 }
 
 .media-home-utilities a,
@@ -1684,6 +1787,8 @@
 .media-review-type-row.is-movie .media-review-type-fill { background: #ff7f87; }
 .media-review-type-row.is-anime .media-review-type-fill { background: #62d4eb; }
 .media-review-type-row.is-game .media-review-type-fill { background: #63d49a; }
+.media-review-type-row.is-variety .media-review-type-fill { background: #e56bb3; }
+.media-review-type-row.is-documentary .media-review-type-fill { background: #6f8fe8; }
 
 .media-review-investment {
   display: grid;
@@ -1782,7 +1887,7 @@
 
 .media-review-highlight-rating {
   margin-top: 17px;
-  color: #ffb76c;
+  color: var(--media-rating);
   font-weight: 720;
 }
 
@@ -1948,18 +2053,18 @@
 }
 
 .media-review-badge.is-completed {
-  background: color-mix(in srgb, #56d68b 12%, transparent);
-  color: #69d99a;
+  background: color-mix(in srgb, var(--media-success) 12%, transparent);
+  color: var(--media-success);
 }
 
 .media-review-badge.is-abandoned {
-  background: color-mix(in srgb, #ff8a78 11%, transparent);
-  color: #ff9383;
+  background: color-mix(in srgb, var(--media-danger) 11%, transparent);
+  color: var(--media-danger);
 }
 
 .media-review-badge.is-cross-year {
-  background: color-mix(in srgb, #c99cff 12%, transparent);
-  color: #c99cff;
+  background: color-mix(in srgb, var(--media-special) 12%, transparent);
+  color: var(--media-special);
 }
 
 .media-review-record-right {
@@ -1972,7 +2077,7 @@
 }
 
 .media-review-record-rating {
-  color: #ffb76c;
+  color: var(--media-rating);
   font-weight: 680;
 }
 
@@ -2223,8 +2328,265 @@
 }
 
 .media-home-categories {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
   padding-left: 24px;
+}
+
+.media-library-home :is(
+  .media-home-category,
+  .media-home-type,
+  .media-home-active-type,
+  .media-home-active-item,
+  .media-home-backlog-chip,
+  .media-home-poster-visual
+).is-variety,
+.media-type-picker-card.is-variety,
+.media-type-manager-row.is-variety {
+  --media-type-color: #e56bb3;
+}
+
+.media-library-home :is(
+  .media-home-category,
+  .media-home-type,
+  .media-home-active-type,
+  .media-home-active-item,
+  .media-home-backlog-chip,
+  .media-home-poster-visual
+).is-documentary,
+.media-type-picker-card.is-documentary,
+.media-type-manager-row.is-documentary {
+  --media-type-color: #6f8fe8;
+}
+
+.media-type-picker-card.is-book,
+.media-type-manager-row.is-book {
+  --media-type-color: #d9a33e;
+}
+
+.media-type-picker-card.is-tv,
+.media-type-manager-row.is-tv {
+  --media-type-color: #9b7cf3;
+}
+
+.media-type-picker-card.is-movie,
+.media-type-manager-row.is-movie {
+  --media-type-color: #e45b5b;
+}
+
+.media-type-picker-card.is-anime,
+.media-type-manager-row.is-anime {
+  --media-type-color: #34a9d6;
+}
+
+.media-type-picker-card.is-game,
+.media-type-manager-row.is-game {
+  --media-type-color: #50c985;
+}
+
+.modal.media-type-picker-modal,
+.modal.media-type-manager-modal {
+  width: min(720px, calc(100vw - 32px));
+  max-width: 720px;
+  max-height: min(760px, calc(100vh - 32px));
+  overflow: hidden;
+}
+
+.media-type-picker-modal .modal-content,
+.media-type-manager-modal .modal-content {
+  min-height: 0;
+  padding: 24px;
+  overflow: auto;
+}
+
+.media-type-picker-modal .modal-title,
+.media-type-manager-modal .modal-title {
+  margin: 0 42px 8px 0;
+  font-size: var(--font-ui-large);
+  font-weight: 720;
+}
+
+.media-type-modal-intro {
+  margin-bottom: 20px;
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+
+.media-type-picker-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.media-type-picker-toolbar .media-type-modal-intro {
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.media-type-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.media-type-picker-card {
+  display: grid;
+  min-width: 0;
+  min-height: 112px;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 12px;
+  background: var(--background-secondary);
+  box-shadow: none;
+  text-align: left;
+}
+
+.media-type-picker-card:hover {
+  border-color: color-mix(in srgb, var(--media-type-color, var(--interactive-accent)) 62%, var(--background-modifier-border));
+  background: color-mix(in srgb, var(--media-type-color, var(--interactive-accent)) 9%, var(--background-secondary));
+  transform: translateY(-1px);
+}
+
+.media-type-picker-icon,
+.media-type-manager-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--media-type-color, var(--interactive-accent)) 14%, transparent);
+  color: var(--media-type-color, var(--text-accent));
+}
+
+.media-type-picker-icon svg,
+.media-type-manager-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.media-type-picker-copy,
+.media-type-manager-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.media-type-picker-copy strong,
+.media-type-manager-copy strong {
+  color: var(--text-normal);
+  font-size: var(--font-ui-medium);
+}
+
+.media-type-picker-copy > span,
+.media-type-manager-copy > span {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.media-type-manager-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.media-type-manager-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 11px;
+  background: var(--background-secondary);
+  cursor: pointer;
+}
+
+.media-type-manager-row:hover {
+  border-color: color-mix(in srgb, var(--media-type-color, var(--interactive-accent)) 48%, var(--background-modifier-border));
+}
+
+.media-type-manager-row input[type="checkbox"] {
+  --checkbox-size: 18px;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--interactive-accent);
+}
+
+.media-type-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.media-type-manage-button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+}
+
+.media-type-manage-icon,
+.media-type-manage-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.media-type-picker-modal .modal-close-button,
+.media-type-manager-modal .modal-close-button {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  place-items: center;
+  padding: 0;
+  border: 0 !important;
+  border-radius: 50%;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--text-muted);
+}
+
+.media-type-picker-modal .modal-close-button:hover,
+.media-type-manager-modal .modal-close-button:hover {
+  background: var(--background-modifier-hover) !important;
+  color: var(--text-normal);
+}
+
+@media (max-width: 660px) {
+  .media-type-picker-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+    margin-bottom: 16px;
+  }
+
+  .media-type-picker-toolbar .media-type-manage-button {
+    margin-left: 0;
+  }
+
+  .media-type-picker-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .media-type-picker-card {
+    min-height: 86px;
+  }
 }
 
 .media-home-category {
@@ -2391,7 +2753,7 @@
   border: 1px solid color-mix(in srgb, var(--media-type-color, var(--interactive-accent)) 42%, transparent);
   border-radius: 5px;
   background: color-mix(in srgb, var(--media-type-color, var(--interactive-accent)) 14%, transparent);
-  color: color-mix(in srgb, var(--media-type-color, var(--text-accent)) 78%, white);
+  color: color-mix(in srgb, var(--media-type-color, var(--text-accent)) 78%, var(--media-type-text-mix, white));
   white-space: nowrap;
 }
 
@@ -2501,7 +2863,7 @@
 }
 
 .media-home-active-type {
-  color: color-mix(in srgb, var(--media-type-color, var(--text-muted)) 72%, white);
+  color: color-mix(in srgb, var(--media-type-color, var(--text-muted)) 72%, var(--media-type-text-mix, white));
 }
 
 .media-home-progress-row {
@@ -2605,7 +2967,7 @@
   width: 100%;
   height: 28px;
   border-color: color-mix(in srgb, var(--color-green) 72%, transparent);
-  color: color-mix(in srgb, var(--color-green) 82%, white) !important;
+  color: color-mix(in srgb, var(--color-green) 82%, var(--media-type-text-mix, white)) !important;
   font-size: 10px;
   font-weight: 650;
 }
@@ -2759,7 +3121,7 @@
   padding: 3px 8px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--media-type-color, var(--interactive-accent)) 11%, transparent);
-  color: color-mix(in srgb, var(--media-type-color, var(--text-muted)) 74%, white);
+  color: color-mix(in srgb, var(--media-type-color, var(--text-muted)) 74%, var(--media-type-text-mix, white));
   font-size: var(--font-ui-smaller);
 }
 
@@ -2830,32 +3192,55 @@
 }
 
 .media-home-backlog-meta {
-  gap: 7px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 32px;
+  gap: 6px;
   margin-top: 5px;
   color: var(--media-muted);
   font-size: var(--font-ui-smaller);
   white-space: nowrap;
 }
 
+.media-home-backlog-meta > span {
+  min-width: 0;
+}
+
+.media-home-backlog-meta > span:nth-child(2) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .media-home-backlog-start {
-  width: 100%;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
   min-height: 32px;
-  margin-top: 8px;
-  padding: 0 10px;
-  border: 1px solid color-mix(in srgb, var(--interactive-accent) 62%, transparent);
+  place-items: center;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--interactive-accent) 34%, var(--media-card-border));
   border-radius: 7px;
-  background: color-mix(in srgb, var(--interactive-accent) 7%, transparent) !important;
+  background: color-mix(in srgb, var(--interactive-accent) 8%, transparent) !important;
   box-shadow: none !important;
   color: var(--text-accent) !important;
-  font-size: var(--font-ui-smaller);
-  font-weight: 650;
-  white-space: nowrap;
 }
 
 .media-home-backlog-start:hover:not(:disabled) {
-  border-color: var(--interactive-accent);
-  background: color-mix(in srgb, var(--interactive-accent) 15%, transparent) !important;
+  border-color: color-mix(in srgb, var(--interactive-accent) 62%, var(--media-card-border));
+  background: color-mix(in srgb, var(--interactive-accent) 16%, transparent) !important;
   color: var(--text-accent-hover) !important;
+}
+
+.media-home-backlog-start-icon {
+  display: grid;
+  width: 13px;
+  height: 13px;
+  place-items: center;
+}
+
+.media-home-backlog-start-icon svg {
+  width: 13px;
+  height: 13px;
 }
 
 @media (max-width: 560px) {
@@ -3448,7 +3833,7 @@
 }
 
 .media-work-hero.has-custom-backdrop::before {
-  background-position: center;
+  background-position: var(--media-work-backdrop-position, center);
   background-size: cover;
   filter: blur(1.2px) saturate(0.92) contrast(1.02);
   opacity: 0.42;
@@ -3494,8 +3879,16 @@
   min-height: 32px;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: 8px;
+}
+
+.media-work-artwork-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
 }
 
 .media-work-source {
@@ -3515,7 +3908,8 @@
   display: none;
 }
 
-.media-work-cover-trigger {
+.media-work-cover-trigger,
+.media-work-backdrop-trigger {
   display: inline-flex;
   min-width: 0;
   min-height: 28px !important;
@@ -3532,10 +3926,317 @@
   white-space: nowrap;
 }
 
-.media-work-cover-trigger:hover {
+.media-work-cover-trigger:hover,
+.media-work-backdrop-trigger:hover {
   border-color: color-mix(in srgb, var(--interactive-accent) 42%, var(--media-card-border)) !important;
   background: color-mix(in srgb, var(--interactive-accent) 7%, var(--background-primary)) !important;
   color: var(--interactive-accent-hover);
+}
+
+.media-backdrop-overlay {
+  z-index: var(--layer-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+
+.modal.media-backdrop-editor-modal {
+  position: relative;
+  inset: auto;
+  width: min(920px, calc(100vw - 64px));
+  max-width: 920px;
+  max-height: min(820px, calc(100vh - 36px));
+  overflow: hidden;
+  transform: none;
+}
+
+.media-backdrop-editor-modal .modal-content {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  padding: 24px;
+}
+
+.media-backdrop-editor-modal .modal-title {
+  align-self: stretch;
+  margin: 0 40px 16px 0;
+  font-size: var(--font-ui-large);
+  font-weight: 720;
+  text-align: left;
+}
+
+.media-backdrop-editor-modal .modal-close-button,
+.media-metadata-editor-modal .modal-close-button,
+.mb-image-suggester-modal .modal-close-button,
+.mb-image-suggester-modal > .modal-header-button,
+.modal:has(.mb-image-suggester-modal) > .modal-close-button {
+  position: absolute;
+  z-index: 3;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  place-items: center;
+  padding: 0;
+  border: 0 !important;
+  border-radius: 50%;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: transparent;
+  font-size: 0;
+  line-height: 0;
+}
+
+.media-backdrop-editor-modal .modal-close-button:hover,
+.media-metadata-editor-modal .modal-close-button:hover,
+.mb-image-suggester-modal .modal-close-button:hover,
+.mb-image-suggester-modal > .modal-header-button:hover,
+.modal:has(.mb-image-suggester-modal) > .modal-close-button:hover {
+  background: var(--background-modifier-hover) !important;
+}
+
+.media-backdrop-editor-modal .modal-close-button svg,
+.media-metadata-editor-modal .modal-close-button svg,
+.mb-image-suggester-modal .modal-close-button svg,
+.mb-image-suggester-modal > .modal-header-button svg,
+.modal:has(.mb-image-suggester-modal) > .modal-close-button svg {
+  visibility: hidden;
+}
+
+.mb-image-suggester-modal > svg.media-library-modal-close {
+  position: absolute;
+  z-index: 3;
+  top: 21px;
+  right: 21px;
+  width: 17px;
+  height: 17px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.mb-image-suggester-modal > svg.media-library-modal-close:hover {
+  color: var(--text-normal);
+}
+
+.media-backdrop-editor-modal .modal-close-button::before,
+.media-backdrop-editor-modal .modal-close-button::after,
+.media-metadata-editor-modal .modal-close-button::before,
+.media-metadata-editor-modal .modal-close-button::after,
+.mb-image-suggester-modal .modal-close-button::before,
+.mb-image-suggester-modal .modal-close-button::after,
+.mb-image-suggester-modal > .modal-header-button::before,
+.mb-image-suggester-modal > .modal-header-button::after,
+.modal:has(.mb-image-suggester-modal) > .modal-close-button::before,
+.modal:has(.mb-image-suggester-modal) > .modal-close-button::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 17px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--text-muted);
+  content: "";
+  pointer-events: none;
+}
+
+.media-backdrop-editor-modal .modal-close-button::before,
+.media-metadata-editor-modal .modal-close-button::before,
+.mb-image-suggester-modal .modal-close-button::before,
+.mb-image-suggester-modal > .modal-header-button::before,
+.modal:has(.mb-image-suggester-modal) > .modal-close-button::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.media-backdrop-editor-modal .modal-close-button::after,
+.media-metadata-editor-modal .modal-close-button::after,
+.mb-image-suggester-modal .modal-close-button::after,
+.mb-image-suggester-modal > .modal-header-button::after,
+.modal:has(.mb-image-suggester-modal) > .modal-close-button::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.media-backdrop-editor-modal .modal-close-button:hover::before,
+.media-backdrop-editor-modal .modal-close-button:hover::after,
+.media-metadata-editor-modal .modal-close-button:hover::before,
+.media-metadata-editor-modal .modal-close-button:hover::after,
+.mb-image-suggester-modal .modal-close-button:hover::before,
+.mb-image-suggester-modal .modal-close-button:hover::after,
+.mb-image-suggester-modal > .modal-header-button:hover::before,
+.mb-image-suggester-modal > .modal-header-button:hover::after,
+.modal:has(.mb-image-suggester-modal) > .modal-close-button:hover::before,
+.modal:has(.mb-image-suggester-modal) > .modal-close-button:hover::after {
+  background: var(--text-normal);
+}
+
+.media-backdrop-modal-content {
+  min-height: 0;
+  overflow: auto;
+}
+
+.media-backdrop-editor,
+.media-backdrop-picker {
+  display: grid;
+  gap: 16px;
+}
+
+.media-backdrop-editor-hint {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.media-backdrop-preview {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  aspect-ratio: var(--media-backdrop-preview-ratio, 2.5);
+  min-height: 220px;
+  max-height: min(56vh, 420px);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 12px;
+  background: var(--background-secondary);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--background-primary) 34%, transparent);
+  cursor: grab;
+  outline: none;
+  touch-action: none;
+  user-select: none;
+}
+
+.media-backdrop-preview:focus-visible {
+  box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+}
+
+.media-backdrop-preview.is-dragging {
+  cursor: grabbing;
+}
+
+.media-backdrop-preview img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.media-backdrop-preview-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--background-primary) 88%, transparent) 0%, color-mix(in srgb, var(--background-primary) 62%, transparent) 42%, transparent 78%);
+  pointer-events: none;
+}
+
+.media-backdrop-editor-tools,
+.media-backdrop-editor-decisions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.media-backdrop-editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: 2px;
+}
+
+.media-backdrop-picker > .media-backdrop-editor-footer {
+  justify-content: flex-end;
+}
+
+.media-backdrop-remove {
+  color: var(--text-error) !important;
+}
+
+.media-backdrop-picker-search {
+  width: min(360px, 100%);
+}
+
+.media-backdrop-picker-grid {
+  display: grid;
+  max-height: min(58vh, 560px);
+  overflow: auto;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  padding: 2px;
+}
+
+.media-backdrop-picker-card {
+  display: grid;
+  overflow: hidden;
+  min-width: 0;
+  height: auto !important;
+  padding: 0 !important;
+  border: 1px solid var(--background-modifier-border) !important;
+  border-radius: 9px !important;
+  background: var(--background-secondary) !important;
+  box-shadow: none !important;
+  color: var(--text-normal) !important;
+  text-align: left;
+}
+
+.media-backdrop-picker-card:hover,
+.media-backdrop-picker-card.is-selected {
+  border-color: var(--interactive-accent) !important;
+}
+
+.media-backdrop-picker-card img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.media-backdrop-picker-card span {
+  overflow: hidden;
+  padding: 8px 10px 9px;
+  font-size: var(--font-ui-small);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.media-backdrop-picker-empty {
+  grid-column: 1 / -1;
+  padding: 36px 18px;
+  border: 1px dashed var(--background-modifier-border);
+  border-radius: 10px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .media-backdrop-overlay {
+    padding: 10px;
+  }
+
+  .modal.media-backdrop-editor-modal {
+    width: calc(100vw - 20px);
+    max-height: calc(100vh - 20px);
+  }
+
+  .media-backdrop-editor-modal .modal-content {
+    padding: 20px 16px 16px;
+  }
+
+  .media-backdrop-preview {
+    min-height: 150px;
+  }
+
+  .media-backdrop-picker-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .media-backdrop-editor-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .media-backdrop-editor-decisions {
+    justify-content: flex-end;
+  }
 }
 
 /* Meta Bind's native image picker is intentionally compact here because the
@@ -3647,6 +4348,191 @@
 .media-work-info {
   min-width: 0;
   align-self: center;
+}
+
+.media-work-heading {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.media-work-heading .media-work-title {
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.media-work-edit-metadata {
+  display: inline-flex;
+  width: 30px;
+  min-height: 30px !important;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--interactive-accent) 18%, var(--media-card-border)) !important;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--background-primary) 88%, var(--background-secondary)) !important;
+  box-shadow: none !important;
+  color: var(--text-accent);
+  font-size: var(--font-ui-smaller);
+  font-weight: 650;
+}
+
+.media-work-edit-metadata:hover {
+  border-color: color-mix(in srgb, var(--interactive-accent) 42%, var(--media-card-border)) !important;
+  background: color-mix(in srgb, var(--interactive-accent) 7%, var(--background-primary)) !important;
+  color: var(--interactive-accent-hover);
+}
+
+.media-work-edit-metadata-icon {
+  display: inline-flex;
+  width: 15px;
+  height: 15px;
+  align-items: center;
+  justify-content: center;
+}
+
+.media-work-edit-metadata-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.modal.media-metadata-editor-modal {
+  position: relative;
+  inset: auto;
+  width: min(820px, calc(100vw - 64px));
+  max-width: 820px;
+  max-height: min(86vh, 860px);
+  overflow: hidden;
+  transform: none;
+}
+
+.media-metadata-overlay {
+  z-index: var(--layer-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+
+.media-metadata-editor-modal .modal-content {
+  min-height: 0;
+  overflow: auto;
+  padding: 24px;
+}
+
+.media-metadata-editor-modal .modal-title {
+  margin: 0 40px 16px 0;
+  font-size: var(--font-ui-large);
+  font-weight: 720;
+}
+
+.media-metadata-editor {
+  display: grid;
+  gap: 18px;
+}
+
+.media-metadata-hint {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  line-height: 1.55;
+}
+
+.media-metadata-section {
+  display: grid;
+  gap: 10px;
+}
+
+.media-metadata-section h2 {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.media-metadata-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 14px;
+}
+
+.media-metadata-field {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.media-metadata-field.is-wide {
+  grid-column: 1 / -1;
+}
+
+.media-metadata-field > label {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  font-weight: 650;
+}
+
+.media-metadata-field input,
+.media-metadata-field select,
+.media-metadata-field textarea {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+.media-metadata-field textarea {
+  min-height: 64px;
+  resize: vertical;
+}
+
+.media-metadata-footer {
+  position: sticky;
+  bottom: -24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 2px -24px -24px;
+  padding: 14px 24px 18px;
+  border-top: 1px solid var(--background-modifier-border);
+  background: color-mix(in srgb, var(--background-primary) 94%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+@media (max-width: 600px) {
+  .media-work-heading {
+    align-items: center;
+  }
+
+  .media-work-edit-metadata {
+    margin-top: 0;
+  }
+
+  .modal.media-metadata-editor-modal {
+    width: calc(100vw - 20px);
+    max-height: calc(100vh - 20px);
+  }
+
+  .media-metadata-editor-modal .modal-content {
+    padding: 20px 16px 16px;
+  }
+
+  .media-metadata-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .media-metadata-field.is-wide {
+    grid-column: auto;
+  }
+
+  .media-metadata-footer {
+    bottom: -16px;
+    margin: 0 -16px -16px;
+    padding: 12px 16px 16px;
+  }
 }
 
 .media-work-title {
@@ -4197,7 +5083,7 @@
   border: 1px solid color-mix(in srgb, var(--media-type-color, var(--interactive-accent)) 35%, var(--media-card-border));
   border-radius: 999px;
   background: color-mix(in srgb, var(--media-type-color, var(--interactive-accent)) 9%, transparent);
-  color: color-mix(in srgb, var(--media-type-color, var(--text-accent)) 78%, white);
+  color: color-mix(in srgb, var(--media-type-color, var(--text-accent)) 78%, var(--media-type-text-mix, white));
   font-size: var(--font-ui-smaller);
   font-weight: 650;
   white-space: nowrap;
@@ -4218,7 +5104,7 @@
 
 .media-library-note :is(.media-experience-next, .media-experience-confirm-button) {
   border-color: color-mix(in srgb, var(--media-type-color, var(--interactive-accent)) 52%, var(--media-card-border));
-  color: color-mix(in srgb, var(--media-type-color, var(--text-accent)) 78%, white);
+  color: color-mix(in srgb, var(--media-type-color, var(--text-accent)) 78%, var(--media-type-text-mix, white));
 }
 
 .media-library-note :is(.media-experience-next, .media-experience-retry, .media-experience-cancel, .media-experience-confirm-button):hover:not(:disabled) {
@@ -5683,7 +6569,40 @@
   display: none !important;
 }
 
-@media (max-width: 800px) {
+@media (min-width: 881px) and (max-width: 1080px) {
+  .media-home-header {
+    gap: 14px;
+  }
+
+  .media-home-identity {
+    gap: 12px;
+  }
+
+  .media-home-actions {
+    gap: 8px;
+  }
+
+  .media-home-primary-actions {
+    gap: 6px;
+  }
+
+  .media-home-main-action {
+    min-width: 92px;
+    padding-inline: 10px;
+    font-size: var(--font-ui-small);
+  }
+
+  .media-home-main-action.is-search {
+    min-width: 100px;
+  }
+
+  .media-home-utilities {
+    gap: 6px;
+    padding-left: 8px;
+  }
+}
+
+@media (max-width: 880px) {
   .media-home-header,
   .media-home-identity,
   .media-home-actions {
@@ -6778,35 +7697,7 @@
 }
 
 
-/* Dark media system continuation: softened blue-charcoal palette. */
-:is(.media-library-page, .media-library-note) {
-  --background-primary: #12161b;
-  --background-primary-alt: #161b21;
-  --background-secondary: #1a2027;
-  --background-secondary-alt: #202730;
-  --background-modifier-border: #303946;
-  --background-modifier-border-hover: #424c5a;
-  --background-modifier-hover: #222932;
-  --background-modifier-active-hover: #29323d;
-  --background-modifier-box-shadow: #000000;
-  --text-normal: #e2e6eb;
-  --text-muted: #a0a8b3;
-  --text-faint: #78818d;
-  --text-accent: #a895ff;
-  --text-accent-hover: #bdadff;
-  --interactive-accent: #6657dd;
-  --interactive-accent-hover: #7567e8;
-  --media-card-border: #303946;
-  --media-card-bg: #1a2027;
-  --media-muted: #a0a8b3;
-  color: var(--text-normal);
-  background: var(--background-primary);
-  color-scheme: dark;
-}
-
-:is(.media-library-page, .media-library-note) :is(.markdown-preview-sizer, .cm-sizer) {
-  background: var(--background-primary);
-}
+/* Media system continuation: category and relationship accents. */
 
 .media-category-page.is-book,
 .media-category-card.is-book,
@@ -6843,6 +7734,20 @@
   --media-type-color: #50c985;
 }
 
+.media-category-page.is-variety,
+.media-category-card.is-variety,
+.media-library-note:has(.media-work-hero.is-variety),
+.media-collection-member-chips .is-type.is-variety {
+  --media-type-color: #e56bb3;
+}
+
+.media-category-page.is-documentary,
+.media-category-card.is-documentary,
+.media-library-note:has(.media-work-hero.is-documentary),
+.media-collection-member-chips .is-type.is-documentary {
+  --media-type-color: #6f8fe8;
+}
+
 /* Category pages keep purple actions and use type color only for recognition. */
 .media-category-page .media-category-title-row h1::before,
 .media-category-page .media-category-filters button.is-active::after,
@@ -6852,7 +7757,7 @@
 
 .media-category-page .media-category-filters button.is-active,
 .media-category-page .media-category-status.is-进行中 {
-  color: color-mix(in srgb, var(--media-type-color, var(--text-accent)) 78%, white);
+  color: color-mix(in srgb, var(--media-type-color, var(--text-accent)) 78%, var(--media-type-text-mix, white));
 }
 
 .media-category-page .media-category-status.is-进行中 .media-category-status-dot {
@@ -6889,7 +7794,7 @@
 .media-library-note:has(.media-work-hero) .media-work-genres span {
   border-color: color-mix(in srgb, var(--media-type-color, var(--interactive-accent)) 38%, var(--media-card-border));
   background: color-mix(in srgb, var(--media-type-color, var(--interactive-accent)) 10%, transparent);
-  color: color-mix(in srgb, var(--media-type-color, var(--text-accent)) 76%, white);
+  color: color-mix(in srgb, var(--media-type-color, var(--text-accent)) 76%, var(--media-type-text-mix, white));
 }
 
 .media-library-note:has(.media-work-hero) h2::before,
@@ -6913,7 +7818,7 @@
 .media-collection-layout .media-collection-kind {
   border: 1px solid color-mix(in srgb, var(--media-collection-accent) 38%, transparent);
   background: color-mix(in srgb, var(--media-collection-accent) 12%, transparent);
-  color: color-mix(in srgb, var(--media-collection-accent) 78%, white);
+  color: color-mix(in srgb, var(--media-collection-accent) 78%, var(--media-type-text-mix, white));
 }
 
 .media-collection-layout .media-collection-title {
@@ -6948,20 +7853,20 @@
 .media-collection-member-chips .is-type {
   border: 1px solid color-mix(in srgb, var(--media-type-color, var(--interactive-accent)) 38%, transparent);
   background: color-mix(in srgb, var(--media-type-color, var(--interactive-accent)) 12%, transparent);
-  color: color-mix(in srgb, var(--media-type-color, var(--text-accent)) 76%, white);
+  color: color-mix(in srgb, var(--media-type-color, var(--text-accent)) 76%, var(--media-type-text-mix, white));
 }
 
 /* Collection index keeps the two relationship kinds visually distinct. */
 .media-collection-index-kind.is-collection {
   border: 1px solid color-mix(in srgb, #9b7cf3 38%, transparent);
   background: color-mix(in srgb, #9b7cf3 12%, transparent);
-  color: color-mix(in srgb, #9b7cf3 78%, white);
+  color: color-mix(in srgb, #9b7cf3 78%, var(--media-type-text-mix, white));
 }
 
 .media-collection-index-kind.is-series {
   border: 1px solid color-mix(in srgb, #d9a33e 38%, transparent);
   background: color-mix(in srgb, #d9a33e 12%, transparent);
-  color: color-mix(in srgb, #d9a33e 78%, white);
+  color: color-mix(in srgb, #d9a33e 78%, var(--media-type-text-mix, white));
 }
 
 .media-collection-index .media-collection-index-section-heading::before {
@@ -7364,7 +8269,7 @@ body.theme-dark .quickAddModal.onePageInputModal .modal-content > div:last-child
 }
 
 /* QuickAdd: compact second-level import/manual chooser. */
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) {
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) {
   --media-quickadd-type: #9b7cf3;
   --media-quickadd-surface: #171c22;
   --media-quickadd-row: #1a2027;
@@ -7408,7 +8313,15 @@ body.theme-dark .prompt:has(input.prompt-input[placeholder="游戏"]) {
   --media-quickadd-type: #50c985;
 }
 
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .prompt-input-container {
+body.theme-dark .prompt:has(input.prompt-input[placeholder="综艺"]) {
+  --media-quickadd-type: #e56bb3;
+}
+
+body.theme-dark .prompt:has(input.prompt-input[placeholder="纪录片"]) {
+  --media-quickadd-type: #6f8fe8;
+}
+
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .prompt-input-container {
   position: relative;
   min-height: 92px;
   padding: 20px 52px 18px 30px;
@@ -7416,7 +8329,7 @@ body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [place
   background: #181d24;
 }
 
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .prompt-input-container::before {
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .prompt-input-container::before {
   position: absolute;
   top: 21px;
   bottom: 39px;
@@ -7427,7 +8340,7 @@ body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [place
   content: "";
 }
 
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .prompt-input-container::after {
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .prompt-input-container::after {
   position: absolute;
   bottom: 18px;
   left: 30px;
@@ -7438,7 +8351,7 @@ body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [place
   pointer-events: none;
 }
 
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) input.prompt-input {
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) input.prompt-input {
   height: 30px;
   padding: 0;
   border: 0;
@@ -7451,28 +8364,28 @@ body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [place
   line-height: 30px;
 }
 
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) input.prompt-input:placeholder-shown {
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) input.prompt-input:placeholder-shown {
   caret-color: transparent;
 }
 
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) input.prompt-input::placeholder {
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) input.prompt-input::placeholder {
   color: var(--media-quickadd-text);
   opacity: 1;
 }
 
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .prompt-results {
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .prompt-results {
   max-height: min(380px, calc(100vh - 148px));
   padding: 16px 20px 20px;
   background: var(--media-quickadd-surface);
 }
 
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) :is(.suggestion-container, .suggestion) {
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) :is(.suggestion-container, .suggestion) {
   overflow: visible;
   padding: 0;
   background: transparent;
 }
 
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion {
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion {
   position: relative;
   display: flex;
   align-items: center;
@@ -7485,26 +8398,26 @@ body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [place
   color: var(--media-quickadd-text);
 }
 
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion:first-child {
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion:first-child {
   border-radius: 9px 9px 0 0;
 }
 
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion:nth-child(2) {
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion:nth-child(2) {
   border-bottom: 1px solid var(--media-quickadd-border);
   border-radius: 0 0 9px 9px;
 }
 
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion:is(:hover, .is-selected) {
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion:is(:hover, .is-selected) {
   background: color-mix(in srgb, var(--media-quickadd-type) 9%, var(--media-quickadd-row-hover));
   box-shadow: inset 3px 0 0 var(--media-quickadd-type);
 }
 
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion-content {
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion-content {
   gap: 13px;
   width: 100%;
 }
 
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-icon {
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-icon {
   display: inline-flex;
   flex: 0 0 27px;
   align-items: center;
@@ -7515,7 +8428,7 @@ body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [place
   --icon-stroke: 1.8px;
 }
 
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion-text {
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion-text {
   display: grid;
   gap: 4px;
   min-width: 0;
@@ -7525,22 +8438,22 @@ body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [place
   line-height: 1.2;
 }
 
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion-text::after {
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion-text::after {
   color: var(--media-quickadd-muted);
   font-size: 12px;
   font-weight: 450;
   line-height: 1.2;
 }
 
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion:has(.lucide-download) .quickadd-choice-suggestion-text::after {
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion:has(.lucide-download) .quickadd-choice-suggestion-text::after {
   content: "自动搜索并导入条目信息";
 }
 
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion:has(.lucide-pencil-line) .quickadd-choice-suggestion-text::after {
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion:has(.lucide-pencil-line) .quickadd-choice-suggestion-text::after {
   content: "手动填写作品信息";
 }
 
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion-back {
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion-back {
   min-height: 48px;
   margin-top: 12px;
   border: 1px solid transparent;
@@ -7549,24 +8462,24 @@ body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [place
   color: var(--media-quickadd-muted);
 }
 
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion-back:is(:hover, .is-selected) {
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion-back:is(:hover, .is-selected) {
   border-color: var(--media-quickadd-border);
   background: #1a2027;
   box-shadow: none;
 }
 
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion-back .quickadd-choice-suggestion-text {
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion-back .quickadd-choice-suggestion-text {
   font-size: 0;
 }
 
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion-back .quickadd-choice-suggestion-text::before {
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion-back .quickadd-choice-suggestion-text::before {
   color: var(--media-quickadd-text);
   content: "返回上一级";
   font-size: 14px;
   font-weight: 580;
 }
 
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])) .quickadd-choice-suggestion-back .quickadd-choice-suggestion-text::after {
+body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion-back .quickadd-choice-suggestion-text::after {
   color: var(--media-quickadd-muted);
   content: "重新选择媒体类型";
   font-size: 11px;
@@ -7808,7 +8721,7 @@ body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button:is(
 }
 
 @media (max-width: 640px) {
-  body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"])),
+  body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])),
   body.theme-dark .prompt:has(input.prompt-input[placeholder^="选择一项内容"]) {
     width: calc(100vw - 20px);
     max-width: calc(100vw - 20px);
@@ -7847,7 +8760,9 @@ body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button:is(
     [placeholder="电视剧"],
     [placeholder="电影"],
     [placeholder="动漫"],
-    [placeholder="游戏"]
+    [placeholder="游戏"],
+    [placeholder="综艺"],
+    [placeholder="纪录片"]
   )) {
     height: auto !important;
     min-height: 0 !important;
@@ -7860,7 +8775,9 @@ body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button:is(
     [placeholder="电视剧"],
     [placeholder="电影"],
     [placeholder="动漫"],
-    [placeholder="游戏"]
+    [placeholder="游戏"],
+    [placeholder="综艺"],
+    [placeholder="纪录片"]
   )) input.prompt-input {
     display: none !important;
   }
@@ -7871,7 +8788,9 @@ body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button:is(
     [placeholder="电视剧"],
     [placeholder="电影"],
     [placeholder="动漫"],
-    [placeholder="游戏"]
+    [placeholder="游戏"],
+    [placeholder="综艺"],
+    [placeholder="纪录片"]
   )) .prompt-input-container {
     display: flex;
     min-height: 64px;
@@ -7885,7 +8804,9 @@ body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button:is(
     [placeholder="电视剧"],
     [placeholder="电影"],
     [placeholder="动漫"],
-    [placeholder="游戏"]
+    [placeholder="游戏"],
+    [placeholder="综艺"],
+    [placeholder="纪录片"]
   )) .prompt-input-container::before {
     top: 19px;
     bottom: 19px;
@@ -7898,7 +8819,9 @@ body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button:is(
     [placeholder="电视剧"],
     [placeholder="电影"],
     [placeholder="动漫"],
-    [placeholder="游戏"]
+    [placeholder="游戏"],
+    [placeholder="综艺"],
+    [placeholder="纪录片"]
   )) .prompt-input-container::after {
     position: static !important;
     display: block !important;
@@ -7932,6 +8855,14 @@ body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button:is(
     content: "游戏" !important;
   }
 
+  .is-mobile .prompt:has(input.prompt-input[placeholder="综艺"]) .prompt-input-container::after {
+    content: "综艺" !important;
+  }
+
+  .is-mobile .prompt:has(input.prompt-input[placeholder="纪录片"]) .prompt-input-container::after {
+    content: "纪录片" !important;
+  }
+
   .is-mobile .prompt:has(input.prompt-input[placeholder="新增作品"]) .prompt-results {
     max-height: calc(100dvh - 174px);
     padding: 12px;
@@ -7942,7 +8873,9 @@ body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button:is(
     [placeholder="电视剧"],
     [placeholder="电影"],
     [placeholder="动漫"],
-    [placeholder="游戏"]
+    [placeholder="游戏"],
+    [placeholder="综艺"],
+    [placeholder="纪录片"]
   )) .prompt-results {
     max-height: calc(100dvh - 174px);
     padding: 12px;
@@ -7999,7 +8932,9 @@ body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button:is(
     [placeholder="电视剧"],
     [placeholder="电影"],
     [placeholder="动漫"],
-    [placeholder="游戏"]
+    [placeholder="游戏"],
+    [placeholder="综艺"],
+    [placeholder="纪录片"]
   )) .prompt-input-container {
     background-color: #181d24 !important;
     background-image: linear-gradient(var(--media-mobile-title-accent, #9b7cf3), var(--media-mobile-title-accent, #9b7cf3)) !important;
@@ -8017,7 +8952,9 @@ body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button:is(
     [placeholder="电视剧"],
     [placeholder="电影"],
     [placeholder="动漫"],
-    [placeholder="游戏"]
+    [placeholder="游戏"],
+    [placeholder="综艺"],
+    [placeholder="纪录片"]
   )) {
     --media-mobile-title-accent: var(--media-quickadd-type);
   }
@@ -8028,7 +8965,9 @@ body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button:is(
     [placeholder="电视剧"],
     [placeholder="电影"],
     [placeholder="动漫"],
-    [placeholder="游戏"]
+    [placeholder="游戏"],
+    [placeholder="综艺"],
+    [placeholder="纪录片"]
   )) .prompt-input-container::before {
     position: absolute !important;
     z-index: 4 !important;
@@ -8081,13 +9020,23 @@ body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button:is(
     content: "游戏" !important;
   }
 
+  .is-mobile .prompt:has(input.prompt-input[placeholder="综艺"]) .prompt-input-container::before {
+    content: "综艺" !important;
+  }
+
+  .is-mobile .prompt:has(input.prompt-input[placeholder="纪录片"]) .prompt-input-container::before {
+    content: "纪录片" !important;
+  }
+
   .is-mobile .prompt:has(input.prompt-input:is(
     [placeholder="新增作品"],
     [placeholder="图书"],
     [placeholder="电视剧"],
     [placeholder="电影"],
     [placeholder="动漫"],
-    [placeholder="游戏"]
+    [placeholder="游戏"],
+    [placeholder="综艺"],
+    [placeholder="纪录片"]
   )) .prompt-input-container::after {
     display: none !important;
     content: "" !important;

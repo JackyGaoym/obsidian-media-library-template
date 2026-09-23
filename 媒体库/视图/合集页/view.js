@@ -1,16 +1,13 @@
+await dv.view("媒体库/视图/主题");
+
 const page = dv.current();
 
 if (!page || page.note_type !== "media_collection") {
   return;
 }
 
-const typeLabels = {
-  book: "图书",
-  tv: "电视剧",
-  movie: "电影",
-  anime: "动漫",
-  game: "游戏"
-};
+const typeController = window.__mediaLibraryTypeControllers?.get(app.vault.getName());
+const typeLabels = Object.fromEntries((typeController?.getTypes() || []).map(type => [type.id, type.label]));
 
 const kindLabels = {
   series: "系列",

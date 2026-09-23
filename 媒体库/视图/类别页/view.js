@@ -1,58 +1,12 @@
+await dv.view("媒体库/视图/主题");
+
 const current = dv.current();
 const currentName = current?.file?.name || "";
 
-const typeMeta = {
-  图书: {
-    type: "book",
-    label: "图书",
-    unit: "本",
-    subtitle: "书名、作者、类型、出版时间、封面与阅读进度。",
-    pending: "待阅读",
-    active: "阅读中",
-    add: "新增图书",
-    quickAddChoiceId: "2dc58115-8a58-4f8c-bde0-955aa536f301"
-  },
-  电视剧: {
-    type: "tv",
-    label: "电视剧",
-    unit: "部",
-    subtitle: "剧名、首播时间、类型、集数、海报与追剧进度。",
-    pending: "待观看",
-    active: "追剧中",
-    add: "新增电视剧",
-    quickAddChoiceId: "e2631a3e-a7c7-4af4-9738-940633b4886e"
-  },
-  电影: {
-    type: "movie",
-    label: "电影",
-    unit: "部",
-    subtitle: "电影名、上映时间、类型、时长、海报与观看进度。",
-    pending: "待观看",
-    active: "观看中",
-    add: "新增电影",
-    quickAddChoiceId: "33231650-d582-48a1-900f-085e860da8e4"
-  },
-  动漫: {
-    type: "anime",
-    label: "动漫",
-    unit: "部",
-    subtitle: "动漫名、首播时间、类型、集数、海报与追番进度。",
-    pending: "待观看",
-    active: "追番中",
-    add: "新增动漫",
-    quickAddChoiceId: "50e56c7d-c88b-42ab-bf88-567391f9e123"
-  },
-  游戏: {
-    type: "game",
-    label: "游戏",
-    unit: "款",
-    subtitle: "游戏名、类型、平台、封面、开发商与完成进度。",
-    pending: "待游玩",
-    active: "游玩中",
-    add: "新增游戏",
-    quickAddChoiceId: "2dc5c9ae-85bd-4c07-9108-daf6d17a08b1"
-  }
-};
+const typeController = window.__mediaLibraryTypeControllers?.get(app.vault.getName());
+const typeDefinitions = typeController?.getTypes() || [];
+const enabledTypeDefinitions = typeController?.getTypes({ includeDisabled: false }) || typeDefinitions;
+const typeMeta = Object.fromEntries(typeDefinitions.map(item => [item.label, { ...item, type: item.id }]));
 
 const libraryMeta = {
   全部作品: {
@@ -128,7 +82,7 @@ const coverUrl = page => {
 };
 
 const progressFor = page => {
-  const mediaType = page.media_type || meta.type;
+  const mediaType = typeController?.progressType(page) || page.media_type || meta.type;
   if (mediaType === "book") {
     const currentPage = numberFrom(page.current_page);
     const total = numberFrom(page.page_count);
@@ -138,7 +92,7 @@ const progressFor = page => {
       known: total > 0
     };
   }
-  if (mediaType === "tv" || mediaType === "anime") {
+  if (mediaType === "series") {
     const currentEpisode = numberFrom(page.current_episode);
     const total = numberFrom(page.episode_count);
     return {
@@ -212,7 +166,7 @@ if (meta.quickAddChoiceId) {
   setAppIcon(addIcon, "plus");
   addButton.createSpan({ text: meta.add });
   addButton.addEventListener("click", () => {
-    app.commands.executeCommandById(`quickadd:choice:${meta.quickAddChoiceId}`);
+    typeController?.launch(meta.type);
   });
 }
 
@@ -221,7 +175,7 @@ const filters = toolbar.createDiv({ cls: "media-category-filters", attr: { role:
 const filterDefs = meta.mode === "pending"
   ? [
       ["all", "全部", () => true],
-      ...Object.values(typeMeta).map(item => [item.type, item.label, page => page.media_type === item.type])
+      ...enabledTypeDefinitions.map(item => [item.id, item.label, page => page.media_type === item.id])
     ]
   : [
       ["all", "全部", () => true],
