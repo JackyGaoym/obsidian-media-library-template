@@ -339,6 +339,122 @@
           ]
         },
         {
+          "id": "a5b9e3c7-8db9-4b11-98de-7a97052c9c71",
+          "name": "综艺",
+          "type": "Multi",
+          "command": true,
+          "icon": "mic-2",
+          "collapsed": false,
+          "choices": [
+            {
+              "id": "d7087f6d-f15f-4e51-b7cf-54269f9080dd",
+              "name": "豆瓣导入综艺",
+              "type": "Macro",
+              "command": false,
+              "icon": "download",
+              "onePageInput": "never",
+              "macro": {
+                "id": "0cf0d534-1896-4995-83c0-049aa434b8e7",
+                "name": "豆瓣导入综艺",
+                "commands": [
+                  {
+                    "id": "ef398222-681b-4c6f-b692-1f7a43954da0",
+                    "type": "UserScript",
+                    "path": "媒体库/视图/主题/豆瓣分类导入.js",
+                    "settings": {},
+                    "name": "豆瓣分类导入::variety"
+                  }
+                ]
+              },
+              "runOnStartup": false
+            },
+            {
+              "id": "ea3c8121-cd4d-4a2f-8838-8c0c6f682a48",
+              "name": "手动新增综艺",
+              "type": "Template",
+              "command": false,
+              "icon": "pencil-line",
+              "onePageInput": "always",
+              "templatePath": "媒体库/模板/手动/手动新增综艺.md",
+              "fileNameFormat": {
+                "enabled": true,
+                "format": "{{VALUE:标题}}（{{VALUE:发行年份|default:未知年份}}）"
+              },
+              "discoverExistingNotesBeforeCreate": true,
+              "folder": {
+                "enabled": true,
+                "folders": ["媒体库/作品"],
+                "chooseWhenCreatingNote": false,
+                "createInSameFolderAsActiveFile": false,
+                "chooseFromSubfolders": false
+              },
+              "appendLink": false,
+              "copyLinkToClipboard": false,
+              "openFile": true,
+              "fileOpening": { "location": "tab", "direction": "vertical", "mode": "default", "focus": true },
+              "fileExistsBehavior": { "kind": "prompt" }
+            }
+          ]
+        },
+        {
+          "id": "53ef2d64-c2a3-44a3-87c6-9049c70f38b5",
+          "name": "纪录片",
+          "type": "Multi",
+          "command": true,
+          "icon": "camera",
+          "collapsed": false,
+          "choices": [
+            {
+              "id": "913741bd-a619-4be5-a476-ff39f7aead64",
+              "name": "豆瓣导入纪录片",
+              "type": "Macro",
+              "command": false,
+              "icon": "download",
+              "onePageInput": "never",
+              "macro": {
+                "id": "2c047ae3-3d70-46a0-b37c-33b957d44ee8",
+                "name": "豆瓣导入纪录片",
+                "commands": [
+                  {
+                    "id": "54fd57bd-f1ef-484e-a3ab-1546621ae932",
+                    "type": "UserScript",
+                    "path": "媒体库/视图/主题/豆瓣分类导入.js",
+                    "settings": {},
+                    "name": "豆瓣分类导入::documentary"
+                  }
+                ]
+              },
+              "runOnStartup": false
+            },
+            {
+              "id": "c4a6004a-12d0-48f5-9ceb-5ff198fa149f",
+              "name": "手动新增纪录片",
+              "type": "Template",
+              "command": false,
+              "icon": "pencil-line",
+              "onePageInput": "always",
+              "templatePath": "媒体库/模板/手动/手动新增纪录片.md",
+              "fileNameFormat": {
+                "enabled": true,
+                "format": "{{VALUE:标题}}（{{VALUE:发行年份|default:未知年份}}）"
+              },
+              "discoverExistingNotesBeforeCreate": true,
+              "folder": {
+                "enabled": true,
+                "folders": ["媒体库/作品"],
+                "chooseWhenCreatingNote": false,
+                "createInSameFolderAsActiveFile": false,
+                "chooseFromSubfolders": false
+              },
+              "appendLink": false,
+              "copyLinkToClipboard": false,
+              "openFile": true,
+              "fileOpening": { "location": "tab", "direction": "vertical", "mode": "default", "focus": true },
+              "fileExistsBehavior": { "kind": "prompt" }
+            }
+          ]
+        },
+        {
           "id": "5c24e729-3af9-4686-b593-64b1f824ab7e",
           "name": "新建合集",
           "type": "Template",

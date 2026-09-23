@@ -1,4 +1,6 @@
 const page = dv.current();
+const typeController = window.__mediaLibraryTypeControllers?.get(app.vault.getName());
+const typeLabels = Object.fromEntries((typeController?.getTypes() || []).map(type => [type.id, type.label]));
 
 if (!page || page.note_type !== "media") {
   return;
@@ -276,7 +278,7 @@ const openPicker = ({ kind, options, excluded = [], onChoose }) => {
         cls: "media-work-relation-option-description",
         text: group.description
           ? String(group.description)
-          : (isWorkOption ? `${group.media_type || "作品"} · ${group.release_date || "未知年份"}` : `${kind}页面`)
+          : (isWorkOption ? `${typeLabels[group.media_type] || group.media_type || "作品"} · ${group.release_date || "未知年份"}` : `${kind}页面`)
       });
       const arrow = option.createSpan({ cls: "media-work-relation-option-arrow" });
       try {

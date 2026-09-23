@@ -1,10 +1,8 @@
-const typeMeta = {
-  book: { label: "图书", unit: "本", color: "#f4c56a" },
-  tv: { label: "电视剧", unit: "部", color: "#7aa8ff" },
-  movie: { label: "电影", unit: "部", color: "#ff7f87" },
-  anime: { label: "动漫", unit: "部", color: "#62d4eb" },
-  game: { label: "游戏", unit: "款", color: "#63d49a" }
-};
+await dv.view("媒体库/视图/主题");
+
+const typeController = window.__mediaLibraryTypeControllers?.get(app.vault.getName());
+const typeDefinitions = typeController?.getTypes() || [];
+const typeMeta = Object.fromEntries(typeDefinitions.map(type => [type.id, type]));
 
 const resultMeta = {
   completed: { label: "已完成", cls: "is-completed" },
@@ -129,6 +127,10 @@ const verifiedRecords = dv.pages('"媒体库/记录"')
   })
   .filter(item => item.year > 0 && item.work);
 
+const reviewTypeIds = typeDefinitions
+  .filter(type => typeController?.isEnabled(type.id) || verifiedRecords.some(item => item.type === type.id))
+  .map(type => type.id);
+
 const availableYears = [...new Set([
   currentYear,
   ...verifiedRecords.map(item => item.year)
@@ -144,13 +146,14 @@ const state = {
 
 const progressFor = page => {
   if (!page) return null;
-  const config = page.media_type === "book"
+  const progressType = typeController?.progressType(page) || page.media_type;
+  const config = progressType === "book"
     ? ["current_page", "page_count", "页"]
-    : (page.media_type === "tv" || page.media_type === "anime")
+    : progressType === "series"
       ? ["current_episode", "episode_count", "集"]
-      : page.media_type === "movie"
+      : progressType === "movie"
         ? ["current_minutes", "runtime_minutes", "分钟"]
-        : page.media_type === "game"
+        : progressType === "game"
           ? ["progress_percent", null, "%"]
           : null;
   if (!config) return null;
@@ -172,7 +175,7 @@ const formatMinutes = minutes => {
 };
 
 const titleForExperience = item => {
-  const labels = { book: "阅读", tv: "观看", movie: "观看", anime: "观看", game: "游玩" };
+  const labels = { book: "阅读", tv: "观看", movie: "观看", anime: "观看", game: "游玩", variety: "观看", documentary: "观看" };
   return `第 ${item.index} 次${labels[item.type] || "体验"}`;
 };
 
@@ -321,7 +324,7 @@ const render = () => {
 
   const typePanel = overview.createDiv({ cls: "media-review-panel media-review-types-panel" });
   sectionTitle(typePanel, "体验构成", `${yearRecords.length} 次体验`);
-  const typeCounts = Object.keys(typeMeta).map(type => ({
+    const typeCounts = reviewTypeIds.map(type => ({
     type,
     count: yearRecords.filter(item => item.type === type).length
   })).filter(item => item.count > 0);
@@ -339,17 +342,17 @@ const render = () => {
   const investment = content.createDiv({ cls: "media-review-section" });
   sectionTitle(investment, "完成规模", "按完成年份归集；跨年记录无需拆分");
   const investmentGrid = investment.createDiv({ cls: "media-review-investment" });
-  const movieMinutes = completed.filter(item => item.type === "movie" && item.progressUnit === "minute")
+  const movieMinutes = completed.filter(item => item.progressUnit === "minute")
     .reduce((sum, item) => sum + item.progressValue, 0);
-  const episodes = completed.filter(item => ["tv", "anime"].includes(item.type) && item.progressUnit === "episode")
+  const episodes = completed.filter(item => item.progressUnit === "episode")
     .reduce((sum, item) => sum + item.progressValue, 0);
   const pages = completed.filter(item => item.type === "book" && item.progressUnit === "page")
     .reduce((sum, item) => sum + item.progressValue, 0);
   const bookCount = completed.filter(item => item.type === "book").length;
   const gameCount = completed.filter(item => item.type === "game").length;
   const investmentItems = [
-    movieMinutes > 0 ? ["电影", formatMinutes(movieMinutes), "movie"] : null,
-    episodes > 0 ? ["剧集与动漫", `${Math.round(episodes)} 集`, "episode"] : null,
+    movieMinutes > 0 ? ["观看时长", formatMinutes(movieMinutes), "movie"] : null,
+    episodes > 0 ? ["剧集进度", `${Math.round(episodes)} 集`, "episode"] : null,
     bookCount > 0 ? ["图书", pages > 0 ? `${Math.round(pages)} 页` : `${bookCount} 本`, "book"] : null,
     gameCount > 0 ? ["游戏", `${gameCount} 款`, "game"] : null
   ].filter(Boolean);
@@ -414,7 +417,8 @@ const render = () => {
   const filters = recordsHeading.createDiv({ cls: "media-review-filters" });
   const typeSelect = filters.createEl("select", { attr: { "aria-label": "按媒体类型筛选" } });
   typeSelect.createEl("option", { text: "全部类型", attr: { value: "all" } });
-  for (const [type, meta] of Object.entries(typeMeta)) {
+  for (const type of reviewTypeIds) {
+    const meta = typeMeta[type];
     const option = typeSelect.createEl("option", { text: meta.label, attr: { value: type } });
     option.selected = state.type === type;
   }

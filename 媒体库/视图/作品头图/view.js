@@ -1,16 +1,15 @@
+await dv.view("媒体库/视图/主题");
+
 const page = dv.current();
 
 if (!page || page.note_type !== "media") {
   return;
 }
 
-const typeLabels = {
-  book: "图书",
-  tv: "电视剧",
-  movie: "电影",
-  anime: "动漫",
-  game: "游戏"
-};
+const typeController = window.__mediaLibraryTypeControllers?.get(app.vault.getName());
+const typeDefinitions = typeController?.getTypes() || [];
+const typeLabels = Object.fromEntries(typeDefinitions.map(type => [type.id, type.label]));
+const workFormat = typeController?.progressType(page) || page.media_type;
 
 const toArray = value => {
   if (!value) return [];
@@ -39,6 +38,22 @@ const resourceUrl = value => {
   return file ? app.vault.getResourcePath(file) : "";
 };
 
+const resourcePath = value => {
+  const raw = value?.path ?? String(value || "");
+  return raw.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0];
+};
+
+const parseBackdropPosition = value => {
+  const raw = String(value || "").trim().toLowerCase();
+  if (!raw || raw === "center") return { x: 50, y: 50 };
+  const percentages = [...raw.matchAll(/(-?\d+(?:\.\d+)?)%/g)].map(match => Number(match[1]));
+  if (percentages.length < 2) return { x: 50, y: 50 };
+  return {
+    x: Math.min(100, Math.max(0, percentages[0])),
+    y: Math.min(100, Math.max(0, percentages[1]))
+  };
+};
+
 const addFact = (facts, label, value) => {
   const text = plainText(value);
   if (text) facts.push({ label, value: text });
@@ -47,10 +62,13 @@ const addFact = (facts, label, value) => {
 const cover = resourceUrl(page.cover);
 const customBackdrop = resourceUrl(page.backdrop);
 const backdrop = customBackdrop || cover;
+let liveBackdropPath = resourcePath(page.backdrop);
+let liveBackdropPosition = parseBackdropPosition(page.backdrop_position);
 const root = dv.container.createDiv({
   cls: `media-work-hero is-${page.media_type || "media"}${customBackdrop ? " has-custom-backdrop" : " uses-cover-backdrop"}`
 });
 if (backdrop) root.style.setProperty("--media-work-backdrop", `url("${backdrop.replace(/"/g, "\\\"")}")`);
+root.style.setProperty("--media-work-backdrop-position", `${liveBackdropPosition.x}% ${liveBackdropPosition.y}%`);
 
 const posterColumn = root.createDiv({ cls: "media-work-poster-column" });
 const poster = posterColumn.createDiv({ cls: "media-work-poster" });
@@ -71,6 +89,63 @@ if (page.source_url) {
   source.setAttr("rel", "noopener");
 }
 
+const artworkActions = posterActions.createDiv({ cls: "media-work-artwork-actions" });
+
+const localizeCoverPicker = () => {
+  const picker = document.querySelector(".mb-image-suggester-modal");
+  if (!picker) return false;
+
+  const title = picker.querySelector(".modal-title, .modal-header");
+  if (title && title.textContent !== "选择封面") title.textContent = "选择封面";
+
+  const search = picker.querySelector('.mb-image-modal-header input, input[type="search"]');
+  if (search) {
+    search.setAttribute("placeholder", "搜索封面图片…");
+    search.setAttribute("aria-label", "搜索封面图片");
+  }
+
+  const closeButton = picker.querySelector(".modal-close-button, .modal-header-button") || title?.previousElementSibling;
+  if (closeButton) {
+    closeButton.classList.add("media-library-modal-close");
+    closeButton.setAttribute("aria-label", "关闭");
+    closeButton.removeAttribute("title");
+  }
+
+  for (const card of picker.querySelectorAll(".mb-image-card")) {
+    const image = card.querySelector(".mb-image-card-image");
+    const label = card.querySelector(".mb-image-card-footer");
+    const sourcePath = image?.getAttribute("alt")?.trim() || label?.textContent.trim() || "";
+    const fileName = sourcePath.split(/[\\/]/).pop()?.replace(/\.[^.]+$/, "") || sourcePath;
+    if (label && label.textContent !== fileName) label.textContent = fileName;
+    if (fileName && card.getAttribute("aria-label") !== `选择 ${fileName}`) {
+      card.setAttribute("aria-label", `选择 ${fileName}`);
+    }
+  }
+
+  for (const button of picker.querySelectorAll("button")) {
+    const label = button.textContent.trim();
+    if (label === "Select none") {
+      button.textContent = "不使用封面";
+      button.setAttribute("aria-label", "不使用封面");
+    } else if (label === "Cancel") {
+      button.textContent = "取消";
+      button.setAttribute("aria-label", "取消");
+    }
+  }
+
+  if (!picker.mediaLibraryLocalizationObserver) {
+    const observer = new MutationObserver(() => localizeCoverPicker());
+    observer.observe(picker, { childList: true, subtree: true });
+    picker.mediaLibraryLocalizationObserver = observer;
+  }
+  return true;
+};
+
+const scheduleCoverPickerLocalization = () => {
+  requestAnimationFrame(() => localizeCoverPicker());
+  window.setTimeout(() => localizeCoverPicker(), 80);
+};
+
 const mountCoverControl = () => {
   const mountHost = posterActions.createDiv({ cls: "media-work-cover-mount" });
   try {
@@ -84,7 +159,7 @@ const mountCoverControl = () => {
     mountHost.metaBindMountable = mountable;
 
     const label = cover ? "更换封面" : "选择封面";
-    const button = posterActions.createEl("button", {
+    const button = artworkActions.createEl("button", {
       cls: "media-work-cover-trigger",
       text: label,
       attr: { type: "button", "aria-label": label, title: label }
@@ -94,12 +169,14 @@ const mountCoverControl = () => {
       const imageField = mountable.inputField;
       if (typeof imageField?.openModal === "function") {
         imageField.openModal();
+        scheduleCoverPickerLocalization();
         return;
       }
 
       const hiddenTrigger = mountHost.querySelector(".mb-image-empty button, .mb-image-card button");
       if (hiddenTrigger) {
         hiddenTrigger.click();
+        scheduleCoverPickerLocalization();
         return;
       }
 
@@ -115,7 +192,13 @@ const mountCoverControl = () => {
 mountCoverControl();
 
 const info = root.createDiv({ cls: "media-work-info" });
-info.createEl("h1", { cls: "media-work-title", text: page.title || page.file.name });
+const heading = info.createDiv({ cls: "media-work-heading" });
+heading.createEl("h1", { cls: "media-work-title", text: page.title || page.file.name });
+const editMetadataButton = heading.createEl("button", {
+  cls: "media-work-edit-metadata",
+  attr: { type: "button", "aria-label": "编辑作品资料", title: "编辑作品资料" }
+});
+const editMetadataIcon = editMetadataButton.createSpan({ cls: "media-work-edit-metadata-icon" });
 
 if (page.original_title) {
   info.createDiv({ cls: "media-work-original-title", text: plainText(page.original_title) });
@@ -125,14 +208,14 @@ const facts = [];
 addFact(facts, "发行", dateText(page.release_date));
 addFact(facts, "分类", typeLabels[page.media_type]);
 
-if (page.media_type === "movie") {
+if (workFormat === "movie") {
   addFact(facts, "时长", page.runtime_minutes);
-} else if (page.media_type === "tv" || page.media_type === "anime") {
+} else if (workFormat === "series") {
   addFact(facts, "集数", page.episode_count ? `${page.episode_count} 集` : "");
-} else if (page.media_type === "book") {
+} else if (workFormat === "book") {
   addFact(facts, "出版社", page.publisher);
   addFact(facts, "页数", page.page_count ? `${page.page_count} 页` : "");
-} else if (page.media_type === "game") {
+} else if (workFormat === "game") {
   addFact(facts, "平台", toArray(page.platforms).map(plainText).filter(Boolean).slice(0, 3).join(" / "));
 }
 
@@ -205,9 +288,8 @@ const numberFrom = value => {
 
 const progressConfigs = {
   book: { field: "current_page", totalField: "page_count", unit: "页", historyUnit: "page", step: 1 },
-  tv: { field: "current_episode", totalField: "episode_count", unit: "集", historyUnit: "episode", step: 1 },
+  series: { field: "current_episode", totalField: "episode_count", unit: "集", historyUnit: "episode", step: 1 },
   movie: { field: "current_minutes", totalField: "runtime_minutes", unit: "分", historyUnit: "minute", step: 10 },
-  anime: { field: "current_episode", totalField: "episode_count", unit: "集", historyUnit: "episode", step: 1 },
   game: { field: "progress_percent", totalField: null, unit: "%", historyUnit: "percent", step: 5, fixedTotal: 100 }
 };
 
@@ -236,6 +318,679 @@ const showNotice = message => {
     console.error(message, error);
   }
 };
+
+setAppIcon(editMetadataIcon, "pencil", "✎");
+
+const metadataFieldsFor = (mediaType, mediaFormat) => {
+  const typeDefinition = typeController?.getType(mediaType);
+  const editableTypeDefinitions = typeDefinitions.filter(type =>
+    typeController?.isEnabled(type.id) || type.id === page.media_type || type.id === mediaType);
+  const fields = [
+    { field: "title", label: "作品名", group: "基本资料", required: true },
+    {
+      field: "media_type",
+      label: "作品类型",
+      group: "基本资料",
+      kind: "select",
+      options: editableTypeDefinitions.map(type => [type.id, type.label])
+    },
+    ...(typeDefinition?.flexibleFormat ? [{
+      field: "media_format",
+      label: "作品形式",
+      group: "基本资料",
+      kind: "select",
+      options: [["movie", "单部（按时长）"], ["series", "剧集（按集数）"]]
+    }] : []),
+    { field: "original_title", label: "原名", group: "基本资料" },
+    { field: "release_date", label: "发行日期", group: "基本资料", placeholder: "YYYY-MM-DD，也可只填年份" },
+    { field: "genres", label: "类型标签", group: "基本资料", kind: "list", placeholder: "多项用逗号分隔" },
+    { field: "source_rating", label: page.source === "douban" ? "豆瓣评分" : "来源评分", group: "来源资料", kind: "number", min: 0, max: 10, step: 0.1 },
+    { field: "source_url", label: "来源链接", group: "来源资料", kind: "url", wide: true }
+  ];
+
+  const detailIndex = fields.findIndex(field => field.group === "来源资料");
+  if (mediaFormat === "movie") {
+    fields.splice(detailIndex, 0,
+      { field: "runtime_minutes", label: "片长（分钟）", group: "基本资料", kind: "number", min: 0, step: 1 },
+      { field: "country", label: "地区", group: "基本资料" },
+      { field: "language", label: "语言", group: "基本资料" },
+      { field: "directors", label: "导演", group: "主创信息", kind: "list" },
+      { field: "screenwriters", label: "编剧", group: "主创信息", kind: "list" },
+      { field: "cast", label: "演员", group: "主创信息", kind: "list", wide: true },
+      { field: "imdb_id", label: "IMDb", group: "来源资料" }
+    );
+  } else if (mediaFormat === "series") {
+    fields.splice(detailIndex, 0,
+      { field: "episode_count", label: "总集数", group: "基本资料", kind: "number", min: 0, step: 1 },
+      { field: "season_count", label: "总季数", group: "基本资料", kind: "number", min: 0, step: 1 },
+      { field: "country", label: "地区", group: "基本资料" },
+      { field: "language", label: "语言", group: "基本资料" },
+      { field: "directors", label: "导演", group: "主创信息", kind: "list" },
+      { field: "screenwriters", label: "编剧", group: "主创信息", kind: "list" },
+      { field: "cast", label: "演员", group: "主创信息", kind: "list", wide: true },
+      { field: "imdb_id", label: "IMDb", group: "来源资料" }
+    );
+  } else if (mediaFormat === "book") {
+    fields.splice(detailIndex, 0,
+      { field: "authors", label: "作者", group: "出版信息", kind: "list" },
+      { field: "translators", label: "译者", group: "出版信息", kind: "list" },
+      { field: "publisher", label: "出版社", group: "出版信息" },
+      { field: "page_count", label: "总页数", group: "出版信息", kind: "number", min: 0, step: 1 },
+      { field: "isbn", label: "ISBN", group: "来源资料" },
+      { field: "source_series", label: "豆瓣丛书", group: "来源资料" }
+    );
+  } else if (mediaFormat === "game") {
+    fields.splice(detailIndex, 0,
+      { field: "platforms", label: "平台", group: "游戏资料", kind: "list" },
+      { field: "developer", label: "开发商", group: "游戏资料" },
+      { field: "aliases", label: "别名", group: "游戏资料", kind: "list", wide: true }
+    );
+  }
+
+  return fields;
+};
+
+const compactText = value => String(value ?? "").replace(/\s+/g, " ").trim();
+const splitMetadataList = value => [...new Set(String(value ?? "")
+  .split(/[,\n，、]+/)
+  .map(item => compactText(item))
+  .filter(Boolean))];
+const isBlankMetadata = value => value === null || value === undefined || value === "" || (Array.isArray(value) && !value.length);
+const numericMetadata = value => {
+  if (value === null || value === undefined || value === "") return null;
+  const match = String(value).replaceAll(",", "").match(/-?\d+(?:\.\d+)?/);
+  return match ? Number(match[0]) : null;
+};
+
+const metadataValueFromPage = definition => {
+  if (definition.field === "media_format") return workFormat;
+  const value = page[definition.field];
+  if (definition.kind === "list") return toArray(value).map(plainText).filter(Boolean);
+  if (definition.kind === "number") return isBlankMetadata(value) ? null : numericMetadata(value);
+  if (definition.field === "release_date") return dateText(value);
+  return plainText(value);
+};
+
+const mountMetadataEditor = () => {
+  const initialDefinitions = metadataFieldsFor(page.media_type, workFormat);
+
+  editMetadataButton.addEventListener("click", () => {
+    let ModalClass;
+    try {
+      ModalClass = typeof require === "function" ? require("obsidian").Modal : null;
+    } catch (error) {
+      ModalClass = null;
+    }
+    if (!ModalClass) {
+      ModalClass = class {
+        open() {
+          this.overlayEl = document.body.createDiv({ cls: "media-metadata-overlay modal-container" });
+          this.modalEl = this.overlayEl.createDiv({
+            cls: "media-metadata-editor-modal modal",
+            attr: { role: "dialog", "aria-modal": "true", "aria-label": "编辑作品资料" }
+          });
+          const closeButton = this.modalEl.createEl("button", {
+            cls: "modal-close-button",
+            attr: { type: "button", "aria-label": "关闭" }
+          });
+          setAppIcon(closeButton, "x", "×");
+          const modalBody = this.modalEl.createDiv({ cls: "modal-content" });
+          this.titleEl = modalBody.createEl("h1", { cls: "modal-title" });
+          this.contentEl = modalBody.createDiv();
+          this.handleKeydown = event => {
+            if (event.key === "Escape") this.close();
+          };
+          document.addEventListener("keydown", this.handleKeydown);
+          closeButton.addEventListener("click", () => this.close());
+          this.overlayEl.addEventListener("click", event => {
+            if (event.target === this.overlayEl) this.close();
+          });
+          this.onOpen();
+        }
+
+        close() {
+          document.removeEventListener("keydown", this.handleKeydown);
+          this.onClose();
+          this.overlayEl?.remove();
+        }
+      };
+    }
+
+    class MetadataEditorModal extends ModalClass {
+      constructor() {
+        super(app);
+        this.values = Object.fromEntries(initialDefinitions.map(definition => [definition.field, metadataValueFromPage(definition)]));
+        this.values.media_type = page.media_type;
+        this.values.media_format = workFormat;
+        this.definitions = initialDefinitions;
+        this.definitionMap = new Map(initialDefinitions.map(definition => [definition.field, definition]));
+        this.inputs = new Map();
+        this.saving = false;
+      }
+
+      onOpen() {
+        this.modalEl.addClass("media-metadata-editor-modal");
+        this.titleEl.setText("编辑作品资料");
+        this.render();
+      }
+
+      readInputs() {
+        for (const definition of this.definitions) {
+          const input = this.inputs.get(definition.field);
+          if (!input) continue;
+          if (definition.kind === "list") this.values[definition.field] = splitMetadataList(input.value);
+          else if (definition.kind === "number") this.values[definition.field] = input.value === "" ? null : Number(input.value);
+          else this.values[definition.field] = input.value.trim();
+        }
+      }
+
+      valueForInput(definition) {
+        const value = this.values[definition.field];
+        return definition.kind === "list" ? toArray(value).join("，") : (value ?? "");
+      }
+
+      renderField(grid, definition) {
+        const row = grid.createDiv({
+          cls: `media-metadata-field${definition.wide ? " is-wide" : ""}`
+        });
+        const label = row.createEl("label", { text: definition.label });
+        let input;
+        if (definition.kind === "select") {
+          input = row.createEl("select");
+          for (const [value, text] of definition.options || []) {
+            input.createEl("option", { text, attr: { value } });
+          }
+        } else if (definition.kind === "list" && definition.wide) {
+          input = row.createEl("textarea", { attr: { rows: "2" } });
+        } else {
+          input = row.createEl("input", {
+            attr: {
+              type: definition.kind === "number" ? "number" : (definition.kind === "url" ? "url" : "text")
+            }
+          });
+        }
+        input.setAttr("aria-label", definition.label);
+        if (definition.placeholder) input.setAttr("placeholder", definition.placeholder);
+        if (definition.required) input.setAttr("required", "true");
+        if (definition.kind === "number") {
+          if (definition.min !== undefined) input.setAttr("min", String(definition.min));
+          if (definition.max !== undefined) input.setAttr("max", String(definition.max));
+          input.setAttr("step", String(definition.step ?? 1));
+        }
+        input.value = this.valueForInput(definition);
+        const inputId = `${page.file.path}-${definition.field}`.replace(/[^a-zA-Z0-9_-]/g, "-");
+        label.setAttr("for", inputId);
+        input.id = inputId;
+        this.inputs.set(definition.field, input);
+        if (["media_type", "media_format"].includes(definition.field)) {
+          input.addEventListener("change", () => {
+            this.readInputs();
+            if (definition.field === "media_type") {
+              const selectedType = typeController?.getType(this.values.media_type);
+              this.values.media_format = selectedType?.format || workFormat;
+            }
+            this.render();
+          });
+        }
+
+      }
+
+      render() {
+        const selectedType = typeController?.getType(this.values.media_type) || typeController?.getType(page.media_type);
+        const selectedFormat = selectedType?.flexibleFormat
+          ? (["movie", "series"].includes(this.values.media_format) ? this.values.media_format : selectedType.format)
+          : (selectedType?.format || workFormat);
+        this.values.media_format = selectedFormat;
+        this.definitions = metadataFieldsFor(selectedType?.id || page.media_type, selectedFormat);
+        for (const definition of this.definitions) {
+          if (!(definition.field in this.values)) this.values[definition.field] = metadataValueFromPage(definition);
+        }
+        this.definitionMap = new Map(this.definitions.map(definition => [definition.field, definition]));
+        this.contentEl.empty();
+        this.inputs.clear();
+        const shell = this.contentEl.createDiv({ cls: "media-metadata-editor" });
+        const toolbar = shell.createDiv({ cls: "media-metadata-toolbar" });
+        toolbar.createDiv({
+          cls: "media-metadata-hint",
+          text: "修改作品本身的资料；个人评分、状态和进度仍在作品页管理。"
+        });
+
+        const groups = [...new Set(this.definitions.map(definition => definition.group))];
+        for (const groupName of groups) {
+          const section = shell.createEl("section", { cls: "media-metadata-section" });
+          section.createEl("h2", { text: groupName });
+          const grid = section.createDiv({ cls: "media-metadata-grid" });
+          for (const definition of this.definitions.filter(item => item.group === groupName)) {
+            this.renderField(grid, definition);
+          }
+        }
+
+        const footer = shell.createDiv({ cls: "media-metadata-footer" });
+        footer.createEl("button", { text: "取消", attr: { type: "button" } })
+          .addEventListener("click", () => this.close());
+        const saveButton = footer.createEl("button", {
+          cls: "mod-cta",
+          text: this.saving ? "正在保存…" : "保存",
+          attr: { type: "button" }
+        });
+        saveButton.disabled = this.saving;
+        saveButton.addEventListener("click", () => void this.save());
+      }
+
+      validate(values) {
+        if (!String(values.title || "").trim()) return "作品名不能为空";
+        if (values.release_date && !/^\d{4}(?:-\d{2}(?:-\d{2})?)?$/.test(values.release_date)) {
+          return "发行日期请使用 YYYY、YYYY-MM 或 YYYY-MM-DD";
+        }
+        if (values.source_rating !== null && (!Number.isFinite(values.source_rating) || values.source_rating < 0 || values.source_rating > 10)) {
+          return `${this.definitionMap.get("source_rating")?.label || "来源评分"}需要在 0–10 之间`;
+        }
+        for (const field of ["runtime_minutes", "episode_count", "season_count", "page_count"]) {
+          if (!(field in values) || values[field] === null) continue;
+          if (!Number.isFinite(values[field]) || values[field] < 0) return `${this.definitionMap.get(field)?.label || field} 需要填写非负数`;
+        }
+        if (values.source_url) {
+          try {
+            const url = new URL(values.source_url);
+            if (!/^https?:$/.test(url.protocol)) return "来源链接需要使用 http 或 https";
+          } catch (error) {
+            return "来源链接格式不正确";
+          }
+        }
+        return "";
+      }
+
+      async save() {
+        if (this.saving) return;
+        this.readInputs();
+        const message = this.validate(this.values);
+        if (message) {
+          showNotice(message);
+          return;
+        }
+        this.saving = true;
+        this.render();
+        try {
+          await writeFrontmatter(frontmatter => {
+            for (const definition of this.definitions) {
+              const value = this.values[definition.field];
+              if (definition.kind === "list") frontmatter[definition.field] = toArray(value).filter(Boolean);
+              else if (definition.kind === "number") frontmatter[definition.field] = value === null ? null : value;
+              else frontmatter[definition.field] = value ?? "";
+            }
+            const selectedType = typeController?.getType(this.values.media_type);
+            if (selectedType) {
+              frontmatter.media_type = selectedType.id;
+              frontmatter.media_format = selectedType.flexibleFormat
+                ? (this.values.media_format || workFormat || selectedType.format)
+                : selectedType.format;
+            }
+          });
+          showNotice("作品资料已保存");
+          this.close();
+        } catch (error) {
+          this.saving = false;
+          showNotice("保存失败，现有资料未被覆盖");
+          this.render();
+        }
+      }
+
+      onClose() {
+        this.contentEl.empty();
+      }
+    }
+
+    new MetadataEditorModal().open();
+  });
+};
+
+mountMetadataEditor();
+
+const mountBackdropControl = () => {
+  const button = artworkActions.createEl("button", {
+    cls: "media-work-backdrop-trigger",
+    attr: { type: "button" }
+  });
+
+  const syncButton = () => {
+    const label = liveBackdropPath ? "调整横幅" : "设置横幅";
+    button.setText(label);
+    button.setAttr("aria-label", label);
+  };
+
+  const applyBackdropVisual = () => {
+    const selectedUrl = resourceUrl(liveBackdropPath);
+    const visualUrl = selectedUrl || cover;
+    root.removeClass(selectedUrl ? "uses-cover-backdrop" : "has-custom-backdrop");
+    root.addClass(selectedUrl ? "has-custom-backdrop" : "uses-cover-backdrop");
+    if (visualUrl) {
+      root.style.setProperty("--media-work-backdrop", `url("${visualUrl.replace(/"/g, "\\\"")}")`);
+    } else {
+      root.style.removeProperty("--media-work-backdrop");
+    }
+    root.style.setProperty(
+      "--media-work-backdrop-position",
+      `${liveBackdropPosition.x}% ${liveBackdropPosition.y}%`
+    );
+    syncButton();
+  };
+
+  const saveBackdrop = async (file, position) => {
+    try {
+      const normalized = {
+        x: Math.round(clamp(position.x, 0, 100)),
+        y: Math.round(clamp(position.y, 0, 100))
+      };
+      await writeFrontmatter(frontmatter => {
+        frontmatter.backdrop = file.path;
+        frontmatter.backdrop_position = `${normalized.x}% ${normalized.y}%`;
+      });
+      liveBackdropPath = file.path;
+      liveBackdropPosition = normalized;
+      applyBackdropVisual();
+      showNotice("横幅已保存");
+      return true;
+    } catch (error) {
+      console.error("保存横幅失败", error);
+      showNotice("横幅保存失败，请稍后重试");
+      return false;
+    }
+  };
+
+  const removeBackdrop = async () => {
+    try {
+      await writeFrontmatter(frontmatter => {
+        frontmatter.backdrop = "";
+        delete frontmatter.backdrop_position;
+      });
+      liveBackdropPath = "";
+      liveBackdropPosition = { x: 50, y: 50 };
+      applyBackdropVisual();
+      showNotice("已移除横幅，恢复使用封面背景");
+      return true;
+    } catch (error) {
+      console.error("移除横幅失败", error);
+      showNotice("移除横幅失败，请稍后重试");
+      return false;
+    }
+  };
+
+  const openEditor = () => {
+    let ModalClass;
+    try {
+      ModalClass = typeof require === "function" ? require("obsidian").Modal : null;
+    } catch (error) {
+      ModalClass = null;
+    }
+    if (!ModalClass) {
+      ModalClass = class {
+        open() {
+          this.overlayEl = document.body.createDiv({ cls: "media-backdrop-overlay modal-container" });
+          this.modalEl = this.overlayEl.createDiv({
+            cls: "media-backdrop-editor-modal modal",
+            attr: { role: "dialog", "aria-modal": "true", "aria-label": "横幅编辑器" }
+          });
+          const closeButton = this.modalEl.createEl("button", {
+            cls: "modal-close-button",
+            attr: { type: "button", "aria-label": "关闭" }
+          });
+          setAppIcon(closeButton, "x", "×");
+          const modalBody = this.modalEl.createDiv({ cls: "modal-content" });
+          this.titleEl = modalBody.createEl("h1", { cls: "modal-title" });
+          this.contentEl = modalBody.createDiv({ cls: "media-backdrop-modal-content" });
+          this.handleKeydown = event => {
+            if (event.key === "Escape") this.close();
+          };
+          document.addEventListener("keydown", this.handleKeydown);
+          closeButton.addEventListener("click", () => this.close());
+          this.overlayEl.addEventListener("click", event => {
+            if (event.target === this.overlayEl) this.close();
+          });
+          this.onOpen();
+        }
+
+        close() {
+          document.removeEventListener("keydown", this.handleKeydown);
+          this.onClose();
+          this.overlayEl?.remove();
+        }
+      };
+    }
+
+    const imagePattern = /\.(?:avif|gif|jpe?g|png|webp)$/i;
+    const files = app.vault.getFiles()
+      .filter(file => file.path.startsWith("媒体库/作品/横幅/") && imagePattern.test(file.name))
+      .sort((left, right) => left.basename.localeCompare(right.basename, "zh-CN"));
+    const currentFile = liveBackdropPath
+      ? app.vault.getAbstractFileByPath(liveBackdropPath)
+      : null;
+    const heroRect = root.getBoundingClientRect();
+    const previewRatio = clamp(heroRect.width / Math.max(heroRect.height, 1), 1.7, 3.2);
+
+    class BackdropEditorModal extends ModalClass {
+      constructor() {
+        super(app);
+        this.pendingFile = currentFile && imagePattern.test(currentFile.name) ? currentFile : null;
+        this.position = { ...liveBackdropPosition };
+      }
+
+      onOpen() {
+        this.modalEl.addClass("media-backdrop-editor-modal");
+        if (this.pendingFile) this.renderAdjustment();
+        else this.renderPicker();
+      }
+
+      renderPicker() {
+        this.titleEl.setText("选择横幅");
+        this.contentEl.empty();
+        const shell = this.contentEl.createDiv({ cls: "media-backdrop-picker" });
+        shell.createDiv({
+          cls: "media-backdrop-editor-hint",
+          text: "选择图片后，可以继续拖动调整显示区域。"
+        });
+
+        if (!files.length) {
+          shell.createDiv({
+            cls: "media-backdrop-picker-empty",
+            text: "请先将图片放入「媒体库/作品/横幅」文件夹。"
+          });
+        } else {
+          let visibleFiles = files;
+          const search = shell.createEl("input", {
+            cls: "media-backdrop-picker-search",
+            attr: { type: "search", placeholder: "搜索横幅图片…", "aria-label": "搜索横幅图片" }
+          });
+          search.addEventListener("input", () => {
+            const query = search.value.trim().toLocaleLowerCase("zh-CN");
+            visibleFiles = query
+              ? files.filter(file => `${file.basename} ${file.path}`.toLocaleLowerCase("zh-CN").includes(query))
+              : files;
+            renderCards();
+          });
+          requestAnimationFrame(() => search.focus());
+
+          const grid = shell.createDiv({ cls: "media-backdrop-picker-grid" });
+          const renderCards = () => {
+            grid.empty();
+            if (!visibleFiles.length) {
+              grid.createDiv({ cls: "media-backdrop-picker-empty", text: "没有找到匹配的横幅图片。" });
+              return;
+            }
+            for (const file of visibleFiles) {
+              const card = grid.createEl("button", {
+                cls: `media-backdrop-picker-card${this.pendingFile?.path === file.path ? " is-selected" : ""}`,
+                attr: { type: "button", "aria-label": `选择 ${file.basename}` }
+              });
+              card.createEl("img", {
+                attr: { src: app.vault.getResourcePath(file), alt: "", loading: "lazy" }
+              });
+              card.createSpan({ text: file.basename });
+              card.addEventListener("click", () => {
+                const keepsPosition = liveBackdropPath === file.path;
+                this.pendingFile = file;
+                this.position = keepsPosition ? { ...liveBackdropPosition } : { x: 50, y: 50 };
+                this.renderAdjustment();
+              });
+            }
+          };
+          renderCards();
+        }
+
+        const footer = shell.createDiv({ cls: "media-backdrop-editor-footer" });
+        footer.createEl("button", { text: "取消", attr: { type: "button" } })
+          .addEventListener("click", () => this.close());
+      }
+
+      renderAdjustment() {
+        if (!this.pendingFile) {
+          this.renderPicker();
+          return;
+        }
+
+        this.titleEl.setText("调整横幅");
+        this.contentEl.empty();
+        const shell = this.contentEl.createDiv({ cls: "media-backdrop-editor" });
+        shell.createDiv({
+          cls: "media-backdrop-editor-hint",
+          text: "拖动图片，调整作品页中显示的部分。"
+        });
+
+        const preview = shell.createDiv({
+          cls: "media-backdrop-preview",
+          attr: {
+            tabindex: "0",
+            role: "group",
+            "aria-label": "横幅显示区域，可拖动图片或使用方向键调整"
+          }
+        });
+        preview.style.setProperty("--media-backdrop-preview-ratio", String(previewRatio));
+        const image = preview.createEl("img", {
+          attr: { src: app.vault.getResourcePath(this.pendingFile), alt: "" }
+        });
+        preview.createDiv({ cls: "media-backdrop-preview-shade" });
+
+        const updatePreview = () => {
+          image.style.objectPosition = `${this.position.x}% ${this.position.y}%`;
+        };
+        updatePreview();
+
+        let dragState = null;
+        const startDrag = event => {
+          if (!image.naturalWidth || !image.naturalHeight) return;
+          const rect = preview.getBoundingClientRect();
+          const scale = Math.max(rect.width / image.naturalWidth, rect.height / image.naturalHeight);
+          dragState = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            position: { ...this.position },
+            overflowX: Math.max(0, image.naturalWidth * scale - rect.width),
+            overflowY: Math.max(0, image.naturalHeight * scale - rect.height)
+          };
+          preview.setPointerCapture(event.pointerId);
+          preview.addClass("is-dragging");
+          event.preventDefault();
+        };
+        const moveDrag = event => {
+          if (!dragState || event.pointerId !== dragState.pointerId) return;
+          if (dragState.overflowX > 0.5) {
+            this.position.x = clamp(
+              dragState.position.x - (event.clientX - dragState.startX) / dragState.overflowX * 100,
+              0,
+              100
+            );
+          }
+          if (dragState.overflowY > 0.5) {
+            this.position.y = clamp(
+              dragState.position.y - (event.clientY - dragState.startY) / dragState.overflowY * 100,
+              0,
+              100
+            );
+          }
+          updatePreview();
+          event.preventDefault();
+        };
+        const endDrag = event => {
+          if (!dragState || event.pointerId !== dragState.pointerId) return;
+          if (preview.hasPointerCapture(event.pointerId)) preview.releasePointerCapture(event.pointerId);
+          dragState = null;
+          preview.removeClass("is-dragging");
+        };
+
+        preview.addEventListener("pointerdown", startDrag);
+        preview.addEventListener("pointermove", moveDrag);
+        preview.addEventListener("pointerup", endDrag);
+        preview.addEventListener("pointercancel", endDrag);
+        preview.addEventListener("keydown", event => {
+          const step = event.shiftKey ? 10 : 2;
+          const deltas = {
+            ArrowLeft: [-step, 0],
+            ArrowRight: [step, 0],
+            ArrowUp: [0, -step],
+            ArrowDown: [0, step]
+          };
+          const delta = deltas[event.key];
+          if (!delta) return;
+          this.position.x = clamp(this.position.x + delta[0], 0, 100);
+          this.position.y = clamp(this.position.y + delta[1], 0, 100);
+          updatePreview();
+          event.preventDefault();
+        });
+
+        const tools = shell.createDiv({ cls: "media-backdrop-editor-tools" });
+        tools.createEl("button", { text: "重新选择", attr: { type: "button" } })
+          .addEventListener("click", () => this.renderPicker());
+        tools.createEl("button", { text: "恢复居中", attr: { type: "button" } })
+          .addEventListener("click", () => {
+            this.position = { x: 50, y: 50 };
+            updatePreview();
+            preview.focus();
+          });
+
+        const footer = shell.createDiv({ cls: "media-backdrop-editor-footer" });
+        if (liveBackdropPath) {
+          const removeButton = footer.createEl("button", {
+            cls: "media-backdrop-remove",
+            text: "移除横幅",
+            attr: { type: "button" }
+          });
+          removeButton.addEventListener("click", async () => {
+            removeButton.disabled = true;
+            if (await removeBackdrop()) this.close();
+            else removeButton.disabled = false;
+          });
+        } else {
+          footer.createSpan();
+        }
+
+        const decisions = footer.createDiv({ cls: "media-backdrop-editor-decisions" });
+        decisions.createEl("button", { text: "取消", attr: { type: "button" } })
+          .addEventListener("click", () => this.close());
+        const saveButton = decisions.createEl("button", {
+          cls: "mod-cta",
+          text: "保存",
+          attr: { type: "button" }
+        });
+        saveButton.addEventListener("click", async () => {
+          saveButton.disabled = true;
+          if (await saveBackdrop(this.pendingFile, this.position)) this.close();
+          else saveButton.disabled = false;
+        });
+      }
+
+      onClose() {
+        this.contentEl.empty();
+      }
+    }
+
+    new BackdropEditorModal().open();
+  };
+
+  button.addEventListener("click", openEditor);
+  syncButton();
+};
+
+mountBackdropControl();
 
 const mountRating = host => {
   host.empty();
@@ -397,7 +1152,7 @@ const mountProgress = host => {
   host.empty();
   host.addClass("is-ready");
 
-  const config = progressConfigs[page.media_type];
+  const config = progressConfigs[workFormat];
   if (!config) {
     host.remove();
     return;
@@ -653,7 +1408,9 @@ const dateLabels = {
   tv: { started: "开始追剧", finished: "看完日期" },
   movie: { started: "开始观看", finished: "看完日期" },
   anime: { started: "开始追番", finished: "看完日期" },
-  game: { started: "开始游玩", finished: "通关日期" }
+  game: { started: "开始游玩", finished: "通关日期" },
+  variety: { started: "开始观看", finished: "看完日期" },
+  documentary: { started: "开始观看", finished: "看完日期" }
 };
 
 const localToday = () => {
@@ -669,7 +1426,9 @@ const experienceLabels = {
   tv: { noun: "观看", next: "开始重看" },
   movie: { noun: "观看", next: "开始重看" },
   anime: { noun: "观看", next: "开始重看" },
-  game: { noun: "游玩", next: "开始重玩" }
+  game: { noun: "游玩", next: "开始重玩" },
+  variety: { noun: "观看", next: "开始重看" },
+  documentary: { noun: "观看", next: "开始重看" }
 };
 
 const experienceIndexFrom = value => Math.max(1, Math.round(numberFrom(value)) || 1);
@@ -713,7 +1472,7 @@ const ensureFolder = async folderPath => {
 const yamlText = value => JSON.stringify(String(value ?? ""));
 
 const historyProgress = frontmatter => {
-  const config = progressConfigs[page.media_type];
+  const config = progressConfigs[workFormat];
   if (!config) return { value: 0, total: 0, unit: "percent" };
   const total = config.fixedTotal ?? Math.max(0, Math.round(numberFrom(frontmatter[config.totalField])));
   const value = Math.max(0, Math.round(numberFrom(frontmatter[config.field])));
@@ -811,7 +1570,7 @@ const finalizeExperience = async result => {
     frontmatter.experience_index = index;
     liveExperienceIndex = index;
     if (result === "completed") {
-      const config = progressConfigs[page.media_type];
+      const config = progressConfigs[workFormat];
       const total = config ? (config.fixedTotal ?? Math.max(0, Math.round(numberFrom(frontmatter[config.totalField])))) : 0;
       frontmatter.status = "已完成";
       if (total > 0) frontmatter[config.field] = total;
@@ -1144,7 +1903,7 @@ const mountExperienceHistory = note => {
         frontmatter.started_at = today;
         frontmatter.finished_at = null;
         frontmatter.last_activity_at = today;
-        const config = progressConfigs[page.media_type];
+        const config = progressConfigs[workFormat];
         if (config) frontmatter[config.field] = 0;
       });
       currentIndex = nextIndex;

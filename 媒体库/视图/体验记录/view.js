@@ -1,3 +1,7 @@
+await dv.view("媒体库/视图/主题");
+
+const typeController = window.__mediaLibraryTypeControllers?.get(app.vault.getName());
+
 const resultMeta = {
   completed: { label: "已完成", workStatus: "已完成" },
   abandoned: { label: "已弃置", workStatus: "弃置" }
@@ -12,8 +16,7 @@ const unitMeta = {
 
 const progressFields = {
   book: "progress_page",
-  tv: "progress_episode",
-  anime: "progress_episode",
+  series: "progress_episode",
   movie: "progress_minute",
   game: "progress_percent"
 };
@@ -118,6 +121,7 @@ const record = {
 const work = {
   filePath: workPage?.file?.path || (workPath ? `${workPath}.md` : ""),
   mediaType: String(workPage?.media_type || ""),
+  mediaFormat: typeController?.progressType(workPage) || String(workPage?.media_type || ""),
   status: String(workPage?.status || ""),
   experienceIndex: Math.max(1, Math.round(numberFrom(workPage?.experience_index)) || 1)
 };
@@ -411,7 +415,7 @@ const render = () => {
       workUpdates.finished_at = updates.result === "completed" ? updates.ended_at : null;
       workUpdates.last_activity_at = updates.ended_at;
     }
-    const progressField = progressFields[work.mediaType];
+    const progressField = progressFields[work.mediaFormat];
     if (workUpdates && progressField) workUpdates[progressField] = updates.progress_value;
 
     saving = true;

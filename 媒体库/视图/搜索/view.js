@@ -1,10 +1,9 @@
-const typeMeta = {
-  book: { label: "图书", unit: "本" },
-  tv: { label: "电视剧", unit: "部" },
-  movie: { label: "电影", unit: "部" },
-  anime: { label: "动漫", unit: "部" },
-  game: { label: "游戏", unit: "款" }
-};
+await dv.view("媒体库/视图/主题");
+
+const typeController = window.__mediaLibraryTypeControllers?.get(app.vault.getName());
+const typeDefinitions = typeController?.getTypes() || [];
+const enabledTypeDefinitions = typeController?.getTypes({ includeDisabled: false }) || typeDefinitions;
+const typeMeta = Object.fromEntries(typeDefinitions.map(type => [type.id, type]));
 
 const toArray = value => {
   if (!value) return [];
@@ -262,7 +261,7 @@ const typeFilters = searchPanel.createDiv({
   attr: { role: "tablist", "aria-label": "按媒体类型筛选" }
 });
 const typeButtons = new Map();
-for (const [key, label] of [["all", "全部"], ...Object.entries(typeMeta).map(([key, meta]) => [key, meta.label])]) {
+for (const [key, label] of [["all", "全部"], ...enabledTypeDefinitions.map(type => [type.id, type.label])]) {
   const button = typeFilters.createEl("button", {
     cls: key === "all" ? "is-active" : "",
     attr: { type: "button", role: "tab", "aria-selected": key === "all" ? "true" : "false" }
