@@ -53,6 +53,10 @@
 
 ![新增作品流程](docs/images/add-workflow.png)
 
+「管理作品类型」可按需启用综艺、纪录片，或隐藏不需要的默认类型：
+
+![作品类型管理](docs/images/media-type-management.png)
+
 ### 移动端
 
 <p align="center">
