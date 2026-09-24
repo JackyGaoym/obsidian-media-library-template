@@ -6,6 +6,7 @@ const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 const hero = fs.readFileSync(path.join(root, '媒体库/视图/作品头图/view.js'), 'utf8');
+const collectionSource = fs.readFileSync(path.join(root, '媒体库/视图/合集页/view.js'), 'utf8');
 const recordView = fs.readFileSync(path.join(root, '媒体库/视图/体验记录/view.js'), 'utf8');
 const domainSource = fs.readFileSync(path.join(root, '媒体库/视图/领域/view.js'), 'utf8');
 const querySource = fs.readFileSync(path.join(root, '媒体库/视图/查询/view.js'), 'utf8');
@@ -339,6 +340,126 @@ test('home mobile category choice keeps its modal open while showing methods', a
   assert.equal(modal.closed, false);
   assert.equal(selected.id, 'book');
   assert.equal(selected.options.modal, modal);
+});
+
+test('collection creation stays outside media types and opens the existing QuickAdd template', async () => {
+  const home = fs.readFileSync(path.join(root, '媒体库/首页.md'), 'utf8');
+  const quickAddConfig = JSON.parse(fs.readFileSync(path.join(root, '.obsidian/plugins/quickadd/data.json'), 'utf8'));
+  const collectionChoice = quickAddConfig.choices[0].choices.find(choice => choice.id === '5c24e729-3af9-4686-b593-64b1f824ab7e');
+  assert.equal(collectionChoice?.templatePath, '媒体库/模板/手动/合集.md');
+  assert(home.indexOf('const collectionSection = shell.createDiv({ cls: "media-type-collection-section" })')
+    > home.indexOf('const grid = shell.createDiv({ cls: "media-type-picker-grid" })'));
+  const chosen = [];
+  const notices = [];
+  let closed = false;
+  const quickAdd = {
+    getChoiceById: id => id === collectionChoice.id ? collectionChoice : null,
+    api: { executeChoice: async name => { chosen.push(name); } }
+  };
+  const context = {
+    app: { plugins: { plugins: { quickadd: quickAdd } } },
+    window: { setTimeout: fn => fn() },
+    watchCollectionForm: () => () => {},
+    showProgressNotice: message => notices.push(message),
+    console: { error: () => {} }
+  };
+  vm.createContext(context);
+  vm.runInContext(declaration(home, 'openCollectionCreator')
+    + '\nglobalThis.openCollectionCreator = openCollectionCreator;', context);
+  assert.equal(context.openCollectionCreator({ close: () => { closed = true; } }), true);
+  await Promise.resolve();
+  assert.equal(closed, true);
+  assert.deepEqual(chosen, ['新建合集']);
+  assert.deepEqual(notices, []);
+
+  quickAdd.api.executeChoice = async () => { throw Object.assign(new Error('Input cancelled by user'), { name: 'MacroAbortError' }); };
+  assert.equal(context.openCollectionCreator({ close: () => {} }), true);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(notices, [], 'canceling the form must not show a configuration error');
+
+  quickAdd.api.executeChoice = async () => { throw new Error('actual failure'); };
+  assert.equal(context.openCollectionCreator({ close: () => {} }), true);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(notices.length, 1, 'a genuine QuickAdd failure must still be reported');
+
+  context.app.plugins.plugins.quickadd = null;
+  closed = false;
+  assert.equal(context.openCollectionCreator({ close: () => { closed = true; } }), false);
+  assert.equal(closed, false);
+  assert.equal(notices.length, 2);
+});
+
+test('type picker uses compact names only and keeps collection separate', () => {
+  const home = fs.readFileSync(path.join(root, '媒体库/首页.md'), 'utf8');
+  const css = fs.readFileSync(path.join(root, '.obsidian/snippets/media-library.css'), 'utf8');
+  const rule = selector => css.match(new RegExp(`\\${selector} \\{([^}]+)\\}`))?.[1] || '';
+  assert(home.includes('const cardHeader = button.createSpan({ cls: "media-type-picker-head" })'));
+  assert.doesNotMatch(home, /cls: "media-type-picker-description"/);
+  assert(home.includes('collectionCopy.createEl("strong", { text: "合集或系列" })'));
+  assert.doesNotMatch(home, /collectionCopy\.createEl\("strong", \{ text: "新建合集或系列" \}\)/);
+  assert.match(rule('.media-type-picker-card'), /min-height:\s*88px/);
+  assert.match(rule('.media-type-collection-section'), /grid-template-columns:\s*repeat\(3,/);
+  const template = fs.readFileSync(path.join(root, '媒体库/模板/手动/合集.md'), 'utf8');
+  assert.match(template, /label:合集类型/);
+});
+
+test('collection QuickAdd form is localized without affecting other forms', () => {
+  const home = fs.readFileSync(path.join(root, '媒体库/首页.md'), 'utf8');
+  const fields = [{ textContent: '合集名称' }, { textContent: 'series,collection' }];
+  const title = { textContent: 'Provide inputs' };
+  const buttons = [{ textContent: 'Submit' }, { textContent: 'Cancel' }];
+  const close = { setAttribute(name, value) { this[name] = value; } };
+  const form = { querySelectorAll(selector) { return selector === '.setting-item-name' ? fields : buttons; }, querySelector(selector) { return selector === '.qa-onepage-title' ? title : close; } };
+  const context = {
+    document: { body: {}, querySelectorAll: () => [form] },
+    MutationObserver: class { observe() {} disconnect() {} },
+    window: { setTimeout: () => 1, clearTimeout: () => {} }
+  };
+  vm.createContext(context);
+  vm.runInContext(declaration(home, 'watchCollectionForm') + '\nglobalThis.watchCollectionForm = watchCollectionForm;', context);
+  context.watchCollectionForm();
+  assert.equal(title.textContent, '新建合集或系列');
+  assert.equal(fields[1].textContent, '合集类型');
+  assert.deepEqual(buttons.map(button => button.textContent), ['创建', '取消']);
+  assert.equal(close['aria-label'], '关闭');
+});
+
+test('collection cover and backdrop pickers use Chinese labels and file names', () => {
+  const title = { textContent: '' };
+  const search = { setAttribute(name, value) { this[name] = value; } };
+  const close = { classList: { add() {} }, setAttribute(name, value) { this[name] = value; }, removeAttribute() {} };
+  const image = { getAttribute: () => '媒体库/合集/封面/示例合集.jpg' };
+  const label = { textContent: '媒体库/合集/封面/示例合集.jpg' };
+  const card = {
+    querySelector(selector) { return selector === '.mb-image-card-image' ? image : label; },
+    getAttribute() { return ''; },
+    setAttribute(name, value) { this[name] = value; }
+  };
+  const buttons = [{ textContent: 'Select none', setAttribute(name, value) { this[name] = value; } }, { textContent: 'Cancel', setAttribute(name, value) { this[name] = value; } }];
+  const picker = {
+    querySelector(selector) { return selector.startsWith('.modal-title') ? title : selector.startsWith('.mb-image-modal-header') ? search : close; },
+    querySelectorAll(selector) { return selector === '.mb-image-card' ? [card] : buttons; }
+  };
+  const context = {
+    document: { querySelector: () => picker },
+    MutationObserver: class { observe() {} }
+  };
+  vm.createContext(context);
+  vm.runInContext(declaration(collectionSource, 'localizeCollectionImagePicker') + '\nglobalThis.localizeCollectionImagePicker = localizeCollectionImagePicker;', context);
+  assert.equal(context.localizeCollectionImagePicker('封面'), true);
+  assert.equal(title.textContent, '选择封面');
+  assert.equal(search.placeholder, '搜索封面图片…');
+  assert.equal(label.textContent, '示例合集');
+  assert.equal(card['aria-label'], '选择 示例合集');
+  assert.deepEqual(buttons.map(button => button.textContent), ['不使用封面', '取消']);
+  assert.equal(close['aria-label'], '关闭');
+
+  title.textContent = '';
+  buttons[0].textContent = 'Select none';
+  assert.equal(context.localizeCollectionImagePicker('横幅'), true);
+  assert.equal(title.textContent, '选择横幅');
+  assert.equal(search.placeholder, '搜索横幅图片…');
+  assert.equal(buttons[0].textContent, '不使用横幅');
 });
 
 test('rating and progress synchronization preserve a confirmed year', async () => {

@@ -126,6 +126,8 @@
 
 如果曾经改过首页、视图、模板或 CSS，请对比合并，否则覆盖会丢失个人定制。
 
+1.4.3 恢复在“新增作品”中创建合集或系列，并统一中文表单和选图界面。升级时同步 `媒体库/首页.md`、`媒体库/模板/手动/合集.md`、`媒体库/视图/合集页/view.js` 和 `.obsidian/snippets/media-library.css`；不需要迁移已有笔记。
+
 1.4.2 增加 `record_state` 和 `current_experience_origin`，并新增领域、查询、类型、导入适配、健康规则及健康页视图。升级时要连同暂停中、数据健康两个导航页和现有视图一起复制这些文件，并在 `.obsidian/types.json` 中合并两个新属性类型。旧记录缺少 `record_state` 时仍按有效结束记录处理；重开当前体验后才写入 `reopened`。请先备份自己的库再升级，不要覆盖作品和记录笔记。
 
 1.4.1 为横幅增加缩放和完整原图预览，并修正图片较多时的选择列表滚动。升级时同步 `.obsidian/snippets/media-library.css`、`媒体库/视图/作品头图/view.js`，在 `.obsidian/types.json` 中合并数字属性 `backdrop_scale`；已有横幅不需要迁移，未设置缩放时仍按原来的 100% 铺满显示。
