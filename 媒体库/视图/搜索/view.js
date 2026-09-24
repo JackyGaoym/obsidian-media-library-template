@@ -1,8 +1,10 @@
 await dv.view("媒体库/视图/主题");
+await dv.view("媒体库/视图/查询");
+
+const queryController = window.__mediaLibraryQuery;
 
 const typeController = window.__mediaLibraryTypeControllers?.get(app.vault.getName());
 const typeDefinitions = typeController?.getTypes() || [];
-const enabledTypeDefinitions = typeController?.getTypes({ includeDisabled: false }) || typeDefinitions;
 const typeMeta = Object.fromEntries(typeDefinitions.map(type => [type.id, type]));
 
 const toArray = value => {
@@ -18,12 +20,7 @@ const plainText = value => {
   return String(value).replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].split("/").pop();
 };
 
-const normalize = value => plainText(value)
-  .normalize("NFKC")
-  .toLocaleLowerCase("zh-Hans-CN")
-  .replace(/[，。；、·・:：_—–\-\/\\]+/g, " ")
-  .replace(/\s+/g, " ")
-  .trim();
+const normalize = queryController.normalize;
 
 const values = value => toArray(value).map(plainText).filter(Boolean);
 const titleFor = page => page.title || page.file.name;
@@ -78,148 +75,33 @@ const setAppIcon = (element, name, fallback) => {
   element.setText(fallback);
 };
 
-const linkPath = value => {
-  if (!value) return "";
-  if (value.path) return String(value.path).replace(/\.md$/i, "");
-  return String(value)
-    .replace(/^\[\[/, "")
-    .replace(/\]\]$/, "")
-    .split("|")[0]
-    .replace(/\.md$/i, "");
-};
-
-const pointsTo = (value, targetPage) => {
-  const target = linkPath(value);
-  if (!target || !targetPage?.file) return false;
-  const pagePath = targetPage.file.path.replace(/\.md$/i, "");
-  return target === pagePath
-    || target === targetPage.file.name
-    || target.endsWith(`/${targetPage.file.name}`);
-};
-
-const uniqueTexts = items => [...new Set(items.map(plainText).filter(Boolean))];
-const groupTitle = group => group?.title || group?.file?.name || "";
-const groupSearchTerms = group => uniqueTexts([
-  groupTitle(group),
-  group?.file?.name,
-  ...values(group?.aliases)
-]);
-
 const mediaPages = dv.pages('"媒体库/作品"')
   .where(page => page.note_type === "media")
   .array();
-
 const mediaGroups = dv.pages('"媒体库/合集"')
   .where(page => page.note_type === "media_collection")
   .array();
-const seriesGroups = mediaGroups.filter(group => group.collection_kind === "series");
-const collectionGroups = mediaGroups.filter(group => group.collection_kind === "collection");
+const browsableTypeDefinitions = typeController?.getBrowsableTypes(mediaPages)
+  || typeDefinitions.filter(type => mediaPages.some(page => page.media_type === type.id));
+const entries = queryController.createIndex(mediaPages, mediaGroups, typeMeta);
 
-const relationsFor = page => {
-  const rawSeries = plainText(page.series);
-  const seriesGroup = seriesGroups.find(group => pointsTo(page.series, group));
-  const seriesNames = seriesGroup ? groupSearchTerms(seriesGroup) : uniqueTexts([rawSeries]);
-  const seriesName = seriesGroup ? groupTitle(seriesGroup) : rawSeries;
-
-  const directValues = toArray(page.collections);
-  const directGroups = collectionGroups.filter(group => directValues.some(value => pointsTo(value, group)));
-  const inheritedValues = toArray(seriesGroup?.collections);
-  const inheritedGroups = collectionGroups.filter(group => inheritedValues.some(value => pointsTo(value, group)));
-  const effectiveGroups = [...new Map(
-    [...directGroups, ...inheritedGroups].map(group => [group.file.path, group])
-  ).values()];
-
-  const unresolvedDirectNames = directValues
-    .filter(value => !directGroups.some(group => pointsTo(value, group)))
-    .map(plainText);
-  const unresolvedInheritedNames = inheritedValues
-    .filter(value => !inheritedGroups.some(group => pointsTo(value, group)))
-    .map(plainText);
-  const collectionNames = uniqueTexts([
-    ...effectiveGroups.map(groupTitle),
-    ...unresolvedDirectNames,
-    ...unresolvedInheritedNames
-  ]);
-  const collectionBaseTerms = uniqueTexts([
-    ...collectionNames,
-    ...effectiveGroups.flatMap(groupSearchTerms)
-  ]);
-
-  return {
-    seriesName,
-    seriesTerms: uniqueTexts([
-      ...seriesNames,
-      ...seriesNames.map(name => `${name}系列`)
-    ]),
-    collectionNames,
-    collectionTerms: uniqueTexts([
-      ...collectionBaseTerms,
-      ...collectionBaseTerms.map(name => `${name}合集`)
-    ])
-  };
-};
-
-const makeIndexEntry = page => {
-  const effectiveRelations = relationsFor(page);
-  const titles = [titleFor(page), page.original_title, page.file.name, ...values(page.aliases)].map(plainText).filter(Boolean);
-  const people = [
-    ...values(page.authors),
-    ...values(page.translators),
-    ...values(page.directors),
-    ...values(page.screenwriters),
-    ...values(page.cast),
-    plainText(page.publisher),
-    plainText(page.developer)
-  ].filter(Boolean);
-  const relations = [
-    ...effectiveRelations.seriesTerms,
-    ...effectiveRelations.collectionTerms,
-    ...values(page.related),
-    plainText(page.source_series)
-  ].filter(Boolean);
-  const categories = [
-    typeMeta[page.media_type]?.label,
-    page.media_type,
-    page.status,
-    ...values(page.genres),
-    ...values(page.platforms),
-    plainText(page.format),
-    ...values(page.country),
-    ...values(page.language),
-    effectiveRelations.seriesName ? "系列" : "",
-    effectiveRelations.collectionNames.length ? "合集" : ""
-  ].filter(Boolean);
-  const identifiers = [page.release_date, yearFor(page), page.imdb_id, page.isbn, page.source_id]
-    .map(plainText)
-    .filter(Boolean);
-  const sections = {
-    titles: titles.map(normalize),
-    people: people.map(normalize),
-    relations: relations.map(normalize),
-    categories: categories.map(normalize),
-    identifiers: identifiers.map(normalize)
-  };
-  return {
-    page,
-    titles,
-    people,
-    relations,
-    categories,
-    effectiveRelations,
-    haystack: Object.values(sections).flat().join(" "),
-    sections
-  };
-};
-
-const entries = mediaPages.map(makeIndexEntry);
-const state = {
+const stateKey = `media-library-search:${app.vault.getName()}`;
+const state = queryController.readState(stateKey, {
   query: "",
   type: "all",
   status: "all",
   rating: "all",
   favorite: false,
-  sort: "relevance"
-};
+  sort: "relevance",
+  scrollTop: 0
+});
+if (!["all", ...browsableTypeDefinitions.map(type => type.id)].includes(state.type)) state.type = "all";
+if (!["all", "待体验", "进行中", "暂停", "已完成", "弃置"].includes(state.status)) state.status = "all";
+if (!["all", "high", "rated", "unrated"].includes(state.rating)) state.rating = "all";
+if (!["relevance", "recent", "rating", "year", "title"].includes(state.sort)) state.sort = "relevance";
+state.query = normalize(state.query);
+state.favorite = state.favorite === true;
+const persistState = () => queryController.saveState(stateKey, state);
 
 const root = dv.container.createDiv({ cls: "media-search-app" });
 const header = root.createDiv({ cls: "media-search-header" });
@@ -245,6 +127,7 @@ const searchInput = searchBox.createEl("input", {
     spellcheck: "false"
   }
 });
+searchInput.value = state.query;
 const clearSearch = searchBox.createEl("button", {
   cls: "media-search-clear",
   attr: { type: "button", "aria-label": "清空搜索", title: "清空搜索" }
@@ -254,17 +137,17 @@ clearSearch.hidden = true;
 
 const queryHelp = searchPanel.createDiv({ cls: "media-search-query-help" });
 queryHelp.createSpan({ text: "多个关键词请用空格分隔，结果会同时匹配全部关键词，例如 " });
-queryHelp.createEl("code", { text: "星际邮差 游戏" });
+queryHelp.createEl("code", { text: "最终幻想 电影" });
 
 const typeFilters = searchPanel.createDiv({
   cls: "media-search-type-filters",
   attr: { role: "tablist", "aria-label": "按媒体类型筛选" }
 });
 const typeButtons = new Map();
-for (const [key, label] of [["all", "全部"], ...enabledTypeDefinitions.map(type => [type.id, type.label])]) {
+for (const [key, label] of [["all", "全部"], ...browsableTypeDefinitions.map(type => [type.id, type.label])]) {
   const button = typeFilters.createEl("button", {
-    cls: key === "all" ? "is-active" : "",
-    attr: { type: "button", role: "tab", "aria-selected": key === "all" ? "true" : "false" }
+    cls: key === state.type ? "is-active" : "",
+    attr: { type: "button", role: "tab", "aria-selected": key === state.type ? "true" : "false" }
   });
   button.createSpan({ text: label });
   const count = button.createSpan({ cls: "media-search-type-count" });
@@ -285,6 +168,7 @@ for (const [value, label] of [
   ["已完成", "已完成"],
   ["弃置", "弃置"]
 ]) statusSelect.createEl("option", { text: label, attr: { value } });
+statusSelect.value = state.status;
 
 const ratingSelect = secondaryFilters.createEl("select", { attr: { "aria-label": "评分筛选" } });
 for (const [value, label] of [
@@ -293,6 +177,7 @@ for (const [value, label] of [
   ["rated", "已评分"],
   ["unrated", "未评分"]
 ]) ratingSelect.createEl("option", { text: label, attr: { value } });
+ratingSelect.value = state.rating;
 
 const favoriteButton = secondaryFilters.createEl("button", {
   cls: "media-search-favorite",
@@ -320,15 +205,12 @@ for (const [value, label] of [
   ["year", "发行时间"],
   ["title", "标题"]
 ]) sortSelect.createEl("option", { text: label, attr: { value } });
+sortSelect.value = state.sort;
 
 const resultGrid = root.createDiv({ cls: "media-search-results" });
 const empty = root.createDiv({ cls: "media-search-empty" });
 
-const matchesText = entry => {
-  if (!state.query) return true;
-  const terms = state.query.split(" ").filter(Boolean);
-  return terms.every(term => entry.haystack.includes(term));
-};
+const matchesText = entry => queryController.matches(entry, state.query);
 
 const matchesNonTypeFilters = entry => {
   const { page } = entry;
@@ -502,6 +384,7 @@ const render = () => {
     ? `没有找到同时包含这些线索的作品：${searchInput.value.trim()}`
     : "当前筛选条件下没有作品。");
   for (const entry of visible) renderCard(entry);
+  persistState();
 };
 
 searchInput.addEventListener("input", () => {
@@ -552,4 +435,5 @@ resetButton.addEventListener("click", () => {
 });
 
 render();
-window.setTimeout(() => searchInput.focus(), 80);
+queryController.bindScroll(dv.container, state, persistState);
+if (!state.query && state.scrollTop < 100) window.setTimeout(() => searchInput.focus(), 80);

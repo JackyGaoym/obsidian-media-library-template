@@ -1,4 +1,7 @@
 await dv.view("媒体库/视图/主题");
+await dv.view("媒体库/视图/领域");
+
+const domain = window.__mediaLibraryDomain;
 
 const page = dv.current();
 
@@ -9,7 +12,7 @@ if (!page || page.note_type !== "media") {
 const typeController = window.__mediaLibraryTypeControllers?.get(app.vault.getName());
 const typeDefinitions = typeController?.getTypes() || [];
 const typeLabels = Object.fromEntries(typeDefinitions.map(type => [type.id, type.label]));
-const workFormat = typeController?.progressType(page) || page.media_type;
+const workFormat = domain.formatFor(page, typeController);
 
 const toArray = value => {
   if (!value) return [];
@@ -28,6 +31,15 @@ const dateText = value => {
   if (!value) return "";
   if (typeof value.toFormat === "function") return value.toFormat("yyyy-MM-dd");
   return String(value);
+};
+
+const validDate = value => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const parsed = new Date(year, month - 1, day);
+  return parsed.getFullYear() === year
+    && parsed.getMonth() === month - 1
+    && parsed.getDate() === day;
 };
 
 const resourceUrl = value => {
@@ -299,17 +311,13 @@ if (page.developer) credits.push(`开发：${plainText(page.developer)}`);
 if (credits.length) info.createDiv({ cls: "media-work-credits", text: credits.join("　") });
 
 const mediaFile = app.vault.getAbstractFileByPath(page.file.path);
-let frontmatterWriteQueue = Promise.resolve();
 let liveFinishedAt = dateText(page.finished_at);
 let liveExperienceIndex = Math.max(1, Math.round(Number(page.experience_index)) || 1);
 
 const writeFrontmatter = updater => {
   if (!mediaFile) return Promise.reject(new Error(`没有找到作品文件：${page.file.path}`));
-  const task = frontmatterWriteQueue
-    .catch(() => undefined)
-    .then(() => app.fileManager.processFrontMatter(mediaFile, updater));
-  frontmatterWriteQueue = task;
-  return task;
+  return domain.runFileWrite(app.vault.getName(), mediaFile.path,
+    () => app.fileManager.processFrontMatter(mediaFile, updater));
 };
 
 const writeFields = values => writeFrontmatter(frontmatter => {
@@ -326,12 +334,7 @@ const numberFrom = value => {
   return match ? Number(match[0]) : 0;
 };
 
-const progressConfigs = {
-  book: { field: "current_page", totalField: "page_count", unit: "页", historyUnit: "page", step: 1 },
-  series: { field: "current_episode", totalField: "episode_count", unit: "集", historyUnit: "episode", step: 1 },
-  movie: { field: "current_minutes", totalField: "runtime_minutes", unit: "分", historyUnit: "minute", step: 10 },
-  game: { field: "progress_percent", totalField: null, unit: "%", historyUnit: "percent", step: 5, fixedTotal: 100 }
-};
+const progressConfigs = domain.progressConfigs;
 
 const setAppIcon = (element, name, fallback) => {
   element.empty();
@@ -1589,26 +1592,26 @@ const createExperienceContent = data => {
 };
 
 const upsertExperienceSnapshot = async (frontmatter, result, options = {}) => {
-  const origin = options.origin
-    || (Object.prototype.hasOwnProperty.call(frontmatter, "experience_index") ? "tracked" : "migrated");
-  const migrated = origin === "migrated";
   const index = experienceIndexFrom(frontmatter.experience_index);
   const progress = historyProgress(frontmatter);
   let file = findExperienceFile(index);
   const existing = file ? experienceFrontmatter(file) : {};
-  const endedAt = migrated
-    ? dateText(frontmatter.finished_at)
-    : result === "completed"
-    ? (dateText(frontmatter.finished_at) || dateText(existing.ended_at) || localToday())
-    : (dateText(existing.ended_at) || localToday());
+  const origin = existing.record_origin || options.origin || frontmatter.current_experience_origin
+    || (Object.prototype.hasOwnProperty.call(frontmatter, "experience_index") ? "tracked" : "migrated");
+  const migrated = origin === "migrated";
+  const reopening = existing.record_state === "reopened";
+  let updateDates = !file || reopening || Boolean(options.dateChange);
+  let createdFile = false;
+  const endedAt = dateText(frontmatter.finished_at)
+    || (result === "abandoned" && (!file || reopening) ? localToday() : "");
   const startedAt = dateText(frontmatter.started_at);
-  const verifiedYear = migrated ? 0 : Number(endedAt.slice(0, 4));
+  const verifiedYear = migrated && !reopening ? 0 : Number(endedAt.slice(0, 4));
   const data = {
     experience_index: index,
     result,
     record_origin: origin,
-    date_certainty: migrated ? (endedAt ? "approximate" : "unknown") : "exact",
-    year_verified: !migrated,
+    date_certainty: migrated && !reopening ? (endedAt ? "approximate" : "unknown") : (endedAt ? "exact" : "unknown"),
+    year_verified: (!migrated || reopening) && Boolean(endedAt),
     verified_year: verifiedYear,
     started_at: startedAt,
     ended_at: endedAt,
@@ -1627,26 +1630,36 @@ const upsertExperienceSnapshot = async (frontmatter, result, options = {}) => {
     const safeName = page.file.name.replace(/[\\/:*?"<>|#\[\]]/g, "-");
     const path = `${folder}/${safeName} · 第${index}次.md`;
     file = app.vault.getAbstractFileByPath(path);
-    if (!file) file = await app.vault.create(path, createExperienceContent(data));
+    if (file) updateDates = Boolean(options.dateChange);
+    else {
+      file = await app.vault.create(path, createExperienceContent(data));
+      createdFile = true;
+    }
   }
 
-  await app.fileManager.processFrontMatter(file, snapshot => {
+  await domain.runFileWrite(app.vault.getName(), file.path, () => app.fileManager.processFrontMatter(file, snapshot => {
     snapshot.note_type = "media_experience";
     snapshot.work = `[[${page.file.path.replace(/\.md$/i, "")}|${page.title || page.file.name}]]`;
     snapshot.experience_index = index;
     snapshot.result = result;
+    snapshot.record_state = "ended";
     if (!snapshot.record_origin) snapshot.record_origin = origin;
-    if (snapshot.record_origin === "tracked") {
-      snapshot.date_certainty = "exact";
-      snapshot.year_verified = true;
-      snapshot.verified_year = Number(endedAt.slice(0, 4));
-    } else {
-      if (!snapshot.date_certainty) snapshot.date_certainty = "approximate";
-      if (snapshot.year_verified !== true) snapshot.year_verified = false;
-      if (!snapshot.year_verified) snapshot.verified_year = null;
+    if (updateDates) {
+      if (options.dateChange === "started_at") {
+        snapshot.started_at = startedAt || null;
+      } else if (options.dateChange === "finished_at") {
+        snapshot.ended_at = endedAt || null;
+        snapshot.date_certainty = endedAt ? "exact" : "unknown";
+        snapshot.year_verified = Boolean(endedAt);
+        snapshot.verified_year = endedAt ? Number(endedAt.slice(0, 4)) : null;
+      } else if (createdFile || reopening) {
+        snapshot.date_certainty = data.date_certainty;
+        snapshot.year_verified = data.year_verified;
+        snapshot.verified_year = data.verified_year || null;
+        snapshot.started_at = startedAt || null;
+        snapshot.ended_at = endedAt || null;
+      }
     }
-    snapshot.started_at = startedAt || null;
-    snapshot.ended_at = endedAt;
     snapshot.progress_value = progress.value;
     snapshot.progress_total = progress.total || null;
     snapshot.progress_unit = progress.unit;
@@ -1654,16 +1667,23 @@ const upsertExperienceSnapshot = async (frontmatter, result, options = {}) => {
     if (!Object.prototype.hasOwnProperty.call(snapshot, "edition")) snapshot.edition = frontmatter.edition || null;
     if (!Array.isArray(snapshot.played_on)) snapshot.played_on = [];
     if (!snapshot.created_at) snapshot.created_at = localToday();
-  });
+  }));
 
   return file;
 };
 
-const finalizeExperience = async result => {
+const finalizeExperience = async (result, expected = {}) => {
   let data = {};
   let origin = "tracked";
   await writeFrontmatter(frontmatter => {
-    if (!Object.prototype.hasOwnProperty.call(frontmatter, "experience_index")) origin = "migrated";
+    const expectedStatus = result === "completed" ? "已完成" : "弃置";
+    if ((expected.index && experienceIndexFrom(frontmatter.experience_index) !== expected.index)
+      || (expected.status && String(frontmatter.status || "") !== expectedStatus)) {
+      throw new Error("STALE_EXPERIENCE_ACTION");
+    }
+    if (!Object.prototype.hasOwnProperty.call(frontmatter, "experience_index")
+      && !frontmatter.current_experience_origin) frontmatter.current_experience_origin = "migrated";
+    origin = frontmatter.current_experience_origin || "tracked";
     const index = experienceIndexFrom(frontmatter.experience_index);
     frontmatter.experience_index = index;
     liveExperienceIndex = index;
@@ -1672,7 +1692,10 @@ const finalizeExperience = async result => {
       const total = config ? (config.fixedTotal ?? Math.max(0, Math.round(numberFrom(frontmatter[config.totalField])))) : 0;
       frontmatter.status = "已完成";
       if (total > 0) frontmatter[config.field] = total;
-      frontmatter.finished_at = dateText(frontmatter.finished_at) || (origin === "migrated" ? null : localToday());
+      const existing = findExperienceFile(index);
+      const existingState = existing ? experienceFrontmatter(existing).record_state : "";
+      frontmatter.finished_at = dateText(frontmatter.finished_at)
+        || (origin === "migrated" || (existing && existingState !== "reopened") ? null : localToday());
       frontmatter.last_activity_at = dateText(frontmatter.last_activity_at) || frontmatter.finished_at || null;
       liveFinishedAt = dateText(frontmatter.finished_at);
     } else {
@@ -1686,21 +1709,22 @@ const finalizeExperience = async result => {
   return upsertExperienceSnapshot(data, result, { origin });
 };
 
-const syncEndedSnapshot = async () => {
+const syncEndedSnapshot = async (options = {}) => {
   let data = {};
   await writeFrontmatter(frontmatter => {
     data = { ...frontmatter };
   });
-  if (data.status === "已完成") return upsertExperienceSnapshot(data, "completed");
-  if (data.status === "弃置") return upsertExperienceSnapshot(data, "abandoned");
+  if (data.status === "已完成") return upsertExperienceSnapshot(data, "completed", options);
+  if (data.status === "弃置") return upsertExperienceSnapshot(data, "abandoned", options);
   return null;
 };
 
 const withdrawExperienceSnapshot = async index => {
   const file = findExperienceFile(index);
   if (!file) return false;
-  if (typeof app.fileManager.trashFile === "function") await app.fileManager.trashFile(file);
-  else await app.vault.trash(file, true);
+  await domain.runFileWrite(app.vault.getName(), file.path, () => app.fileManager.processFrontMatter(file, snapshot => {
+    snapshot.record_state = "reopened";
+  }));
   return true;
 };
 
@@ -1748,15 +1772,22 @@ const mountDateControls = note => {
     const commit = async value => {
       const previous = values[field];
       const normalized = value || "";
+      const start = field === "started_at" ? normalized : values.started_at;
+      const finish = field === "finished_at" ? normalized : values.finished_at;
+      if ((normalized && !validDate(normalized)) || (start && finish && start > finish)) {
+        input.value = previous;
+        showNotice(start && finish && start > finish
+          ? "开始日期不能晚于结束日期"
+          : `${labelText}格式不正确`);
+        return false;
+      }
       values[field] = normalized;
       input.value = normalized;
       renderClear();
       try {
         await writeField(field, normalized || null);
         if (field === "finished_at") liveFinishedAt = normalized;
-        if (field === "started_at" || (field === "finished_at" && normalized)) {
-          await syncEndedSnapshot();
-        }
+        await syncEndedSnapshot({ dateChange: field });
         return true;
       } catch (error) {
         console.error(`日期字段 ${field} 与当前记录同步失败`, error);
@@ -1818,13 +1849,19 @@ const mountDateControls = note => {
     controls.finished_at.input.dispatchEvent(new Event("input"));
   });
 
-  const recordDateForStatus = (field, labelText) => {
+  const recordDateForStatus = (field, labelText, expectedStatus, statusSelect) => {
     if (values[field] || pendingDates.has(field)) return;
     pendingDates.add(field);
     const today = localToday();
     controls[field].input.value = today;
     controls[field].input.dispatchEvent(new Event("input"));
     window.setTimeout(async () => {
+      if (statusSelect.value !== expectedStatus) {
+        pendingDates.delete(field);
+        controls[field].input.value = values[field] || "";
+        controls[field].input.dispatchEvent(new Event("input"));
+        return;
+      }
       const saved = await controls[field].commit(today);
       pendingDates.delete(field);
       if (saved) showNotice(`${labelText}已记录为今天`);
@@ -1838,9 +1875,9 @@ const mountDateControls = note => {
     statusSelect.dataset.mediaDateSync = "true";
     statusSelect.addEventListener("change", () => {
       if (statusSelect.value === "进行中") {
-        recordDateForStatus("started_at", labels.started);
+        recordDateForStatus("started_at", labels.started, "进行中", statusSelect);
       } else if (statusSelect.value === "已完成") {
-        recordDateForStatus("finished_at", labels.finished);
+        recordDateForStatus("finished_at", labels.finished, "已完成", statusSelect);
       }
     });
     return true;
@@ -1858,6 +1895,8 @@ const mountExperienceHistory = note => {
   let currentIndex = liveExperienceIndex;
   let liveStatus = page.status || "待体验";
   let isBusy = false;
+  let statusRevision = 0;
+  let pendingResult = null;
 
   const section = content.createDiv({ cls: "media-experience-section" });
   const header = section.createDiv({ cls: "media-experience-header" });
@@ -1907,9 +1946,12 @@ const mountExperienceHistory = note => {
     history.empty();
 
     const records = recordsForWork();
-    if (!records.length) {
+    const currentRecord = records.find(record =>
+      experienceIndexFrom(record.frontmatter.experience_index) === currentIndex
+      && record.frontmatter.record_state !== "reopened");
+    if (!records.length || (ended && !currentRecord)) {
       const empty = history.createDiv({ cls: "media-experience-empty" });
-      empty.createSpan({ text: ended ? "当前记录尚未写入历史，可重试保存或直接开始下一次。" : "完成或弃置当前体验后，会在这里生成历史记录。" });
+      empty.createSpan({ text: ended ? "当前次数尚未写入有效历史，可重试保存。" : "完成或弃置当前体验后，会在这里生成历史记录。" });
       if (ended) {
         const retry = empty.createEl("button", {
           cls: "media-experience-retry",
@@ -1922,7 +1964,7 @@ const mountExperienceHistory = note => {
           isBusy = true;
           renderHistory();
           try {
-            await finalizeExperience(liveStatus === "弃置" ? "abandoned" : "completed");
+            await finalizeExperience(liveStatus === "弃置" ? "abandoned" : "completed", { index: currentIndex, status: true });
             window.setTimeout(renderHistory, 180);
             showNotice("历史记录已保存");
           } catch (error) {
@@ -1934,7 +1976,7 @@ const mountExperienceHistory = note => {
           }
         });
       }
-      return;
+      if (!records.length) return;
     }
 
     for (const record of records) {
@@ -1947,7 +1989,9 @@ const mountExperienceHistory = note => {
         href: record.file.path
       });
       main.addEventListener("click", event => openRecord(record.file, event));
-      const resultLabel = meta.result === "abandoned" ? "已弃置" : "已完成";
+      const resultLabel = meta.record_state === "reopened"
+        ? "已重新打开（暂不计入回顾）"
+        : meta.result === "abandoned" ? "已弃置" : "已完成";
       const dates = [dateText(meta.started_at), dateText(meta.ended_at)].filter(Boolean);
       const certainty = String(meta.date_certainty || "");
       const yearVerified = meta.year_verified === true;
@@ -1989,13 +2033,14 @@ const mountExperienceHistory = note => {
     setBusy(true);
     try {
       const result = liveStatus === "弃置" ? "abandoned" : "completed";
-      await finalizeExperience(result);
+      await finalizeExperience(result, { index: currentIndex, status: true });
       const today = localToday();
       let nextIndex = currentIndex + 1;
       await writeFrontmatter(frontmatter => {
         const actualIndex = experienceIndexFrom(frontmatter.experience_index);
         nextIndex = actualIndex + 1;
         frontmatter.experience_index = nextIndex;
+        frontmatter.current_experience_origin = "tracked";
         frontmatter.status = "进行中";
         frontmatter.rating = null;
         frontmatter.started_at = today;
@@ -2025,32 +2070,47 @@ const mountExperienceHistory = note => {
   });
 
   const syncEndedExperience = async result => {
-    if (isBusy) return;
+    if (isBusy) {
+      pendingResult = result;
+      return;
+    }
+    const requestedRevision = statusRevision;
+    const requestedIndex = currentIndex;
+    const requestedStatus = result === "completed" ? "已完成" : "弃置";
     setBusy(true);
     renderHistory();
     try {
       await new Promise(resolve => window.setTimeout(resolve, 360));
-      await finalizeExperience(result);
+      if (requestedRevision !== statusRevision || liveStatus !== requestedStatus) return;
+      await finalizeExperience(result, { index: requestedIndex, status: true });
       liveStatus = result === "completed" ? "已完成" : "弃置";
       currentIndex = liveExperienceIndex;
       if (result === "abandoned") callout.dispatchEvent(new CustomEvent("media-finished-date-cleared"));
       window.setTimeout(renderHistory, 180);
     } catch (error) {
+      if (error.message === "STALE_EXPERIENCE_ACTION") return;
       console.error("体验历史保存失败", error);
       showNotice("当前状态已保存，但体验历史保存失败，可在记录区重试");
     } finally {
       setBusy(false);
       window.setTimeout(renderHistory, 180);
+      const nextResult = pendingResult;
+      pendingResult = null;
+      if (nextResult && liveStatus === (nextResult === "completed" ? "已完成" : "弃置")) {
+        void syncEndedExperience(nextResult);
+      }
     }
   };
 
   callout.addEventListener("media-progress-status-saved", event => {
     if (event.detail?.status !== "已完成") return;
+    statusRevision += 1;
     liveStatus = "已完成";
     void syncEndedExperience("completed");
   });
 
   callout.addEventListener("media-experience-reopened", () => {
+    statusRevision += 1;
     liveStatus = "进行中";
     window.setTimeout(renderHistory, 160);
   });
@@ -2063,6 +2123,9 @@ const mountExperienceHistory = note => {
     statusSelect.addEventListener("change", async () => {
       const previousStatus = liveStatus;
       const nextStatus = statusSelect.value;
+      statusRevision += 1;
+      const requestedRevision = statusRevision;
+      const requestedIndex = currentIndex;
       liveStatus = nextStatus;
       renderHistory();
       if (nextStatus === "已完成") {
@@ -2075,13 +2138,20 @@ const mountExperienceHistory = note => {
       }
       if (previousStatus !== "已完成" && previousStatus !== "弃置") return;
       try {
-        if (previousStatus === "已完成") {
-          await writeField("finished_at", null);
-          liveFinishedAt = "";
-        }
-        await withdrawExperienceSnapshot(currentIndex);
+        await new Promise(resolve => window.setTimeout(resolve, 360));
+        if (requestedRevision !== statusRevision || liveStatus !== nextStatus) return;
+        await writeFrontmatter(frontmatter => {
+          if (experienceIndexFrom(frontmatter.experience_index) !== requestedIndex
+            || String(frontmatter.status || "") !== nextStatus) {
+            throw new Error("STALE_EXPERIENCE_ACTION");
+          }
+          if (previousStatus === "已完成") frontmatter.finished_at = null;
+        });
+        if (previousStatus === "已完成") liveFinishedAt = "";
+        await withdrawExperienceSnapshot(requestedIndex);
         callout.dispatchEvent(new CustomEvent("media-experience-reopened"));
       } catch (error) {
+        if (error.message === "STALE_EXPERIENCE_ACTION") return;
         console.error("撤销当前体验快照失败", error);
         showNotice("重新打开当前记录失败，请稍后重试");
       }

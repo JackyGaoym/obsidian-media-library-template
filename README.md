@@ -9,8 +9,8 @@
 ## 能做什么
 
 - 七类作品统一管理；默认启用图书、电视剧、电影、动漫和游戏，综艺与纪录片可按需启用，任何类型都可停用且不会删除旧作品。
-- 按待体验、进行中、已完成、高分等视图浏览。
-- 全库搜索可同时匹配标题、人物、题材、系列、合集、平台和年份，并继续按类型、状态、评分与收藏筛选。
+- 按待体验、进行中、暂停中、已完成、高分等视图浏览；暂停列表可快速找回本次体验。
+- 全库搜索与分类页使用同一套多关键词规则，可匹配标题、人物、题材、系列、合集、平台和年份；筛选与滚动位置会记在本机。
 - 首页在同一屏展示最近加入、待体验和正在进行；待体验支持换一批、查看全部与直接开始。
 - 支持图书页数、剧集集数、电影观看时长和游戏百分比进度。
 - 首页和作品详情页都可直接增减或精确输入进度；详情页进度满后可确认标记完成，状态改为已完成时也会自动补满已知总量，已完成进度被减少时则恢复为进行中。
@@ -18,6 +18,7 @@
 - 0.5–5 分半星评分和收藏状态。
 - 每次完成或弃置会生成独立体验记录；当前次数与作品双向同步，开始下一次体验后旧记录冻结。
 - 年度回顾按结束年份统计体验，包含月份时间线、完成规模、高分体验与可筛选的完整记录。
+- 数据健康页只读检查断链、重复体验次数、日期冲突、缺失快照、旧进度字段和重复来源标识，并链接到原笔记核对。
 - 系列、主题合集与双向相关作品三种关系。
 - 合集成员区分作品直接加入与系列继承，系列归属变化时自动更新继承结果；可在搜索弹窗中批量管理直接作品。
 - 本地封面缓存与可拖动、缩放的作品横幅；缩小时可显示完整原图。
@@ -100,11 +101,17 @@
 
 - `.obsidian/snippets/media-library.css`
 - `媒体库/首页.md`
-- `媒体库/导航/` 下的分类页、全部作品、待体验、搜索、回顾与合集索引
+- `媒体库/导航/` 下的分类页、全部作品、待体验、暂停中、数据健康、搜索、回顾与合集索引
 - `媒体库/说明/使用说明.md`
 - `媒体库/说明/数据字典.md`
 - `媒体库/视图/作品头图/view.js`
 - `媒体库/视图/主题/view.js`
+- `媒体库/视图/类型/view.js`
+- `媒体库/视图/导入适配/view.js`
+- `媒体库/视图/领域/view.js`
+- `媒体库/视图/查询/view.js`
+- `媒体库/视图/健康规则/view.js`
+- `媒体库/视图/健康/view.js`
 - `媒体库/视图/主题/豆瓣分类导入.js`
 - `媒体库/视图/体验记录/view.js`
 - `媒体库/视图/搜索/view.js`
@@ -119,6 +126,8 @@
 
 如果曾经改过首页、视图、模板或 CSS，请对比合并，否则覆盖会丢失个人定制。
 
+1.4.2 增加 `record_state` 和 `current_experience_origin`，并新增领域、查询、类型、导入适配、健康规则及健康页视图。升级时要连同暂停中、数据健康两个导航页和现有视图一起复制这些文件，并在 `.obsidian/types.json` 中合并两个新属性类型。旧记录缺少 `record_state` 时仍按有效结束记录处理；重开当前体验后才写入 `reopened`。请先备份自己的库再升级，不要覆盖作品和记录笔记。
+
 1.4.1 为横幅增加缩放和完整原图预览，并修正图片较多时的选择列表滚动。升级时同步 `.obsidian/snippets/media-library.css`、`媒体库/视图/作品头图/view.js`，在 `.obsidian/types.json` 中合并数字属性 `backdrop_scale`；已有横幅不需要迁移，未设置缩放时仍按原来的 100% 铺满显示。
 
 1.4.0 新增作品类型管理、综艺和纪录片，并使用 `media_format` 分开“作品属于哪一类”与“进度按什么记录”。升级时请同步 `媒体库/配置/作品类型.json`、综艺与纪录片导航页、新的手动模板、豆瓣分类导入脚本、QuickAdd 配置和 `.obsidian/types.json`。旧作品缺少 `media_format` 时会自动推断，不需要批量改写。
@@ -131,7 +140,7 @@
 
 ### 3. 处理 Obsidian 和 QuickAdd 配置
 
-- 没有自定义属性类型时，可覆盖 `.obsidian/types.json`。已有自定义时，请合并 `last_activity_at`、`experience_index`、`work`、`result`、`record_origin`、`date_certainty`、`year_verified`、`verified_year`、`ended_at`、`progress_value`、`progress_total`、`progress_unit`、`experience_rating`、`edition` 和 `played_on` 的类型。
+- 没有自定义属性类型时，可覆盖 `.obsidian/types.json`。已有自定义时，请合并 `last_activity_at`、`experience_index`、`current_experience_origin`、`work`、`result`、`record_origin`、`record_state`、`date_certainty`、`year_verified`、`verified_year`、`ended_at`、`progress_value`、`progress_total`、`progress_unit`、`experience_rating`、`edition` 和 `played_on` 的类型。
 - 没有自定义 QuickAdd 时，可覆盖 `.obsidian/plugins/quickadd/data.json`，以获得新的「新增作品」界面。如果添加过自己的 QuickAdd 命令，请先保留原文件，再对比合并配置，不要直接覆盖。
 - 本次升级没有新增必需插件；建议将 Dataview、Meta Bind 和 QuickAdd 更新至本文测试版本或更高的兼容版本。
 - 使用豆瓣导入时，将插件的附件保存目录设为 `媒体库/作品/封面`，保留自己的登录配置。
@@ -241,13 +250,13 @@
 - 改颜色与间距：编辑 `.obsidian/snippets/media-library.css`。
 - 改状态或分类：同时更新模板、Bases 视图、首页脚本和 CSS，避免只改一处。
 - 改目录名：需要全局替换 `媒体库/` 路径，并同步更新 QuickAdd、Homepage 和 Douban 配置。
-- 增加媒体类型：至少补充手动模板、分类页、`.base` 文件、首页 `typeMeta` 和相关 CSS。
+- 自定义媒体类型目前不支持；`customTypes` 是保留配置，不会自动生成模板、导航和进度规则。七种内置类型足够覆盖当前正式流程。
 
 ## 贡献
 
 欢迎提交问题与改进。请勿在 Issue、截图、测试夹具或 Pull Request 中附带真实 Cookie、Token、付费内容、个人媒体记录或无权再分发的封面。详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
-豆瓣分类导入的回归测试可用 Node.js 运行：`node --test tests/豆瓣分类导入.test.cjs`。
+发布前运行 `node scripts/verify-release.cjs`。在模板根目录运行 `node scripts/sync-shared.cjs --check` 比较个人库与模板的共享功能文件，确认后用 `--write` 同步。同步脚本只复制视图、Bases、首页、两个新增导航页、数据字典和 CSS，不复制个人作品、体验记录或插件登录配置。脚本检查与 Node 测试通过后，仍需在 Obsidian 桌面和移动端验收实际插件界面。
 
 ## 许可证
 
