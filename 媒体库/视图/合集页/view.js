@@ -225,6 +225,61 @@ if (isSeries) {
 
 const visualControls = profile.createDiv({ cls: "media-collection-visual-controls" });
 
+const localizeCollectionImagePicker = noun => {
+  const picker = document.querySelector(".mb-image-suggester-modal");
+  if (!picker) return false;
+
+  const title = picker.querySelector(".modal-title, .modal-header");
+  if (title && title.textContent !== `选择${noun}`) title.textContent = `选择${noun}`;
+
+  const search = picker.querySelector('.mb-image-modal-header input, input[type="search"]');
+  if (search) {
+    search.setAttribute("placeholder", `搜索${noun}图片…`);
+    search.setAttribute("aria-label", `搜索${noun}图片`);
+  }
+
+  const closeButton = picker.querySelector(".modal-close-button, .modal-header-button") || title?.previousElementSibling;
+  if (closeButton) {
+    closeButton.classList.add("media-library-modal-close");
+    closeButton.setAttribute("aria-label", "关闭");
+    closeButton.removeAttribute("title");
+  }
+
+  for (const card of picker.querySelectorAll(".mb-image-card")) {
+    const image = card.querySelector(".mb-image-card-image");
+    const label = card.querySelector(".mb-image-card-footer");
+    const sourcePath = image?.getAttribute("alt")?.trim() || label?.textContent.trim() || "";
+    const fileName = sourcePath.split(/[\\/]/).pop()?.replace(/\.[^.]+$/, "") || sourcePath;
+    if (label && label.textContent !== fileName) label.textContent = fileName;
+    if (fileName && card.getAttribute("aria-label") !== `选择 ${fileName}`) {
+      card.setAttribute("aria-label", `选择 ${fileName}`);
+    }
+  }
+
+  for (const button of picker.querySelectorAll("button")) {
+    const label = button.textContent.trim();
+    if (label === "Select none") {
+      button.textContent = `不使用${noun}`;
+      button.setAttribute("aria-label", `不使用${noun}`);
+    } else if (label === "Cancel") {
+      button.textContent = "取消";
+      button.setAttribute("aria-label", "取消");
+    }
+  }
+
+  if (!picker.mediaLibraryLocalizationObserver) {
+    const observer = new MutationObserver(() => localizeCollectionImagePicker(noun));
+    observer.observe(picker, { childList: true, subtree: true });
+    picker.mediaLibraryLocalizationObserver = observer;
+  }
+  return true;
+};
+
+const scheduleCollectionImagePickerLocalization = noun => {
+  requestAnimationFrame(() => localizeCollectionImagePicker(noun));
+  window.setTimeout(() => localizeCollectionImagePicker(noun), 80);
+};
+
 const mountImageControl = ({ field, folder, noun, hasValue }) => {
   const control = visualControls.createDiv({ cls: "media-collection-image-control" });
   const mountHost = control.createDiv({ cls: "media-collection-image-mount" });
@@ -249,12 +304,14 @@ const mountImageControl = ({ field, folder, noun, hasValue }) => {
       const imageField = mountable.inputField;
       if (typeof imageField?.openModal === "function") {
         imageField.openModal();
+        scheduleCollectionImagePickerLocalization(noun);
         return;
       }
 
       const emptyTrigger = mountHost.querySelector(".mb-image-empty button");
       if (emptyTrigger) {
         emptyTrigger.click();
+        scheduleCollectionImagePickerLocalization(noun);
         return;
       }
 
