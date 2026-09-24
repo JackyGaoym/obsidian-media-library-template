@@ -1,6 +1,8 @@
 await dv.view("媒体库/视图/主题");
+await dv.view("媒体库/视图/领域");
 
 const typeController = window.__mediaLibraryTypeControllers?.get(app.vault.getName());
+const domain = window.__mediaLibraryDomain;
 
 const resultMeta = {
   completed: { label: "已完成", workStatus: "已完成" },
@@ -14,12 +16,7 @@ const unitMeta = {
   percent: "%"
 };
 
-const progressFields = {
-  book: "progress_page",
-  series: "progress_episode",
-  movie: "progress_minute",
-  game: "progress_percent"
-};
+const progressFormat = page => domain.formatFor(page, typeController);
 
 const linkTarget = value => {
   if (!value) return "";
@@ -101,6 +98,7 @@ const workPage = workPath ? dv.page(workPath) : null;
 let currentPath = currentPage.file.path;
 
 const record = {
+  state: String(currentPage.record_state || "ended"),
   result: resultMeta[currentPage.result] ? String(currentPage.result) : "completed",
   origin: String(currentPage.record_origin || "migrated"),
   certainty: String(currentPage.date_certainty || "unknown"),
@@ -121,7 +119,7 @@ const record = {
 const work = {
   filePath: workPage?.file?.path || (workPath ? `${workPath}.md` : ""),
   mediaType: String(workPage?.media_type || ""),
-  mediaFormat: typeController?.progressType(workPage) || String(workPage?.media_type || ""),
+  mediaFormat: progressFormat(workPage),
   status: String(workPage?.status || ""),
   experienceIndex: Math.max(1, Math.round(numberFrom(workPage?.experience_index)) || 1)
 };
@@ -157,7 +155,8 @@ const progressLabel = () => {
 };
 
 const shouldSyncCurrentWork = () => work.experienceIndex === record.experienceIndex
-  && work.status === resultMeta[record.result].workStatus;
+  && work.status === resultMeta[record.result].workStatus
+  && record.state !== "reopened";
 
 const root = dv.container.createDiv({ cls: "media-experience-detail" });
 let editing = false;
@@ -169,7 +168,10 @@ const render = () => {
 
   const header = root.createDiv({ cls: "media-experience-detail-header" });
   const badges = header.createDiv({ cls: "media-experience-detail-badges" });
-  badges.createSpan({ cls: `media-experience-detail-badge is-${record.result}`, text: resultMeta[record.result].label });
+  badges.createSpan({
+    cls: `media-experience-detail-badge is-${record.result}`,
+    text: record.state === "reopened" ? "已重新打开" : resultMeta[record.result].label
+  });
   badges.createSpan({
     cls: `media-experience-detail-badge is-${verificationMode()}`,
     text: verificationLabel()
@@ -413,10 +415,13 @@ const render = () => {
     if (workUpdates && mode === "exact") {
       workUpdates.started_at = updates.started_at;
       workUpdates.finished_at = updates.result === "completed" ? updates.ended_at : null;
-      workUpdates.last_activity_at = updates.ended_at;
     }
-    const progressField = progressFields[work.mediaFormat];
-    if (workUpdates && progressField) workUpdates[progressField] = updates.progress_value;
+    const progressConfig = domain.progressConfigs[work.mediaFormat];
+    const syncProgress = Boolean(workUpdates && progressConfig && progressConfig.historyUnit === updates.progress_unit);
+    if (syncProgress) {
+      workUpdates[progressConfig.field] = updates.progress_value;
+      if (progressConfig.totalField) workUpdates[progressConfig.totalField] = updates.progress_total;
+    }
 
     saving = true;
     render();
@@ -424,7 +429,7 @@ const render = () => {
     let workSaved = false;
     try {
       if (destinationFolder) await ensureFolder(destinationFolder);
-      await app.fileManager.processFrontMatter(currentFile, frontmatter => {
+      await domain.runFileWrite(app.vault.getName(), currentFile.path, () => app.fileManager.processFrontMatter(currentFile, frontmatter => {
         for (const [key, value] of Object.entries(updates)) {
           historySnapshot[key] = {
             exists: Object.prototype.hasOwnProperty.call(frontmatter, key),
@@ -432,11 +437,20 @@ const render = () => {
           };
           frontmatter[key] = cloneValue(value);
         }
-      });
+      }));
       recordSaved = true;
 
       if (workUpdates) {
-        await app.fileManager.processFrontMatter(workFile, frontmatter => {
+        await domain.runFileWrite(app.vault.getName(), workFile.path, () => app.fileManager.processFrontMatter(workFile, frontmatter => {
+          const latestIndex = Math.max(1, Math.round(numberFrom(frontmatter.experience_index)) || 1);
+          const latestFormat = progressFormat(frontmatter);
+          if (latestIndex !== record.experienceIndex
+            || String(frontmatter.status || "") !== resultMeta[record.result].workStatus) {
+            throw new Error("作品已切换到另一状态或下一次体验，请刷新记录页后重试");
+          }
+          if (syncProgress && latestFormat !== work.mediaFormat) {
+            throw new Error("作品进度方式已改变，请刷新记录页后重试");
+          }
           for (const [key, value] of Object.entries(workUpdates)) {
             workSnapshot[key] = {
               exists: Object.prototype.hasOwnProperty.call(frontmatter, key),
@@ -444,7 +458,7 @@ const render = () => {
             };
             frontmatter[key] = cloneValue(value);
           }
-        });
+        }));
         workSaved = true;
       }
 
@@ -467,19 +481,23 @@ const render = () => {
       record.playedOn = [...updates.played_on];
       work.status = workUpdates?.status || work.status;
       editing = false;
-      showNotice(syncWork ? "记录与作品当前数据已同步" : "记录已保存");
+      showNotice(syncWork
+        ? (syncProgress ? "记录与作品当前数据已同步" : "记录已保存；进度单位不同，未回写作品进度")
+        : "记录已保存");
     } catch (error) {
       console.error("保存体验记录失败", error);
       if (workSaved && workFile) {
         try {
-          await app.fileManager.processFrontMatter(workFile, frontmatter => restoreFields(frontmatter, workSnapshot));
+          await domain.runFileWrite(app.vault.getName(), workFile.path,
+            () => app.fileManager.processFrontMatter(workFile, frontmatter => restoreFields(frontmatter, workSnapshot)));
         } catch (rollbackError) {
           console.error("作品数据回滚失败", rollbackError);
         }
       }
       if (recordSaved) {
         try {
-          await app.fileManager.processFrontMatter(currentFile, frontmatter => restoreFields(frontmatter, historySnapshot));
+          await domain.runFileWrite(app.vault.getName(), currentFile.path,
+            () => app.fileManager.processFrontMatter(currentFile, frontmatter => restoreFields(frontmatter, historySnapshot)));
         } catch (rollbackError) {
           console.error("记录数据回滚失败", rollbackError);
         }

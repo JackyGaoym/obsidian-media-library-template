@@ -1,12 +1,15 @@
 await dv.view("媒体库/视图/主题");
+await dv.view("媒体库/视图/查询");
+
+const queryController = window.__mediaLibraryQuery;
 
 const current = dv.current();
 const currentName = current?.file?.name || "";
 
 const typeController = window.__mediaLibraryTypeControllers?.get(app.vault.getName());
 const typeDefinitions = typeController?.getTypes() || [];
-const enabledTypeDefinitions = typeController?.getTypes({ includeDisabled: false }) || typeDefinitions;
 const typeMeta = Object.fromEntries(typeDefinitions.map(item => [item.label, { ...item, type: item.id }]));
+const typeMetaById = Object.fromEntries(typeDefinitions.map(item => [item.id, item]));
 
 const libraryMeta = {
   全部作品: {
@@ -22,6 +25,14 @@ const libraryMeta = {
     label: "待体验",
     unit: "部",
     subtitle: "从还没有开始的作品中，找到下一部想读、想看或想玩的内容。",
+    pending: "待体验",
+    active: "进行中"
+  },
+  暂停中: {
+    mode: "paused",
+    label: "暂停中",
+    unit: "部",
+    subtitle: "打开作品，把状态改回进行中，即可继续本次体验。",
     pending: "待体验",
     active: "进行中"
   }
@@ -139,15 +150,26 @@ const setAppIcon = (element, name) => {
 const allItems = dv.pages('"媒体库/作品"')
   .where(page => page.note_type === "media"
     && (!meta.type || page.media_type === meta.type)
-    && (meta.mode !== "pending" || page.status === "待体验"))
+    && (meta.mode !== "pending" || page.status === "待体验")
+    && (meta.mode !== "paused" || page.status === "暂停"))
   .array();
+const mediaGroups = dv.pages('"媒体库/合集"')
+  .where(page => page.note_type === "media_collection")
+  .array();
+const searchEntries = new Map(queryController.createIndex(allItems, mediaGroups, typeMetaById)
+  .map(entry => [entry.page.file.path, entry]));
+const browsableTypeDefinitions = typeController?.getBrowsableTypes(allItems)
+  || typeDefinitions.filter(item => allItems.some(page => page.media_type === item.id));
 
-const state = {
+const stateKey = `media-library-category:${app.vault.getName()}:${currentName}`;
+const state = queryController.readState(stateKey, {
   filter: "all",
   query: "",
   sort: "recent",
-  view: "grid"
-};
+  view: "grid",
+  scrollTop: 0
+});
+const persistState = () => queryController.saveState(stateKey, state);
 
 const root = dv.container.createDiv({ cls: `media-category-page is-${meta.type || meta.mode}` });
 const header = root.createDiv({ cls: "media-category-header" });
@@ -160,7 +182,7 @@ headerCopy.createDiv({ cls: "media-category-subtitle", text: meta.subtitle });
 
 const headerActions = header.createDiv({ cls: "media-category-header-actions" });
 headerActions.createSpan({ cls: "media-category-count", text: `${allItems.length} ${meta.unit}` });
-if (meta.quickAddChoiceId) {
+if (meta.quickAddChoiceId && typeController?.isEnabled(meta.type)) {
   const addButton = headerActions.createEl("button", { cls: "media-category-add", attr: { type: "button" } });
   const addIcon = addButton.createSpan({ cls: "media-category-add-icon" });
   setAppIcon(addIcon, "plus");
@@ -172,18 +194,23 @@ if (meta.quickAddChoiceId) {
 
 const toolbar = root.createDiv({ cls: "media-category-toolbar" });
 const filters = toolbar.createDiv({ cls: "media-category-filters", attr: { role: "tablist", "aria-label": "筛选作品" } });
-const filterDefs = meta.mode === "pending"
+const filterDefs = meta.mode === "pending" || meta.mode === "paused"
   ? [
       ["all", "全部", () => true],
-      ...enabledTypeDefinitions.map(item => [item.id, item.label, page => page.media_type === item.id])
+      ...browsableTypeDefinitions.map(item => [item.id, item.label, page => page.media_type === item.id])
     ]
   : [
       ["all", "全部", () => true],
       ["pending", meta.pending, page => page.status === "待体验"],
       ["active", meta.active, page => page.status === "进行中"],
+      ["paused", "暂停", page => page.status === "暂停"],
       ["finished", "已完成", page => page.status === "已完成"],
       ["high", "高分", page => typeof page.rating === "number" && page.rating >= 4]
     ];
+if (!filterDefs.some(([key]) => key === state.filter)) state.filter = "all";
+if (!["recent", "rating", "year", "title"].includes(state.sort)) state.sort = "recent";
+if (!["grid", "list"].includes(state.view)) state.view = "grid";
+state.query = queryController.normalize(state.query);
 
 const tools = toolbar.createDiv({ cls: "media-category-tools" });
 const searchWrap = tools.createDiv({ cls: "media-category-search" });
@@ -192,6 +219,7 @@ setAppIcon(searchIcon, "search");
 const search = searchWrap.createEl("input", {
   attr: { type: "search", placeholder: `搜索${meta.label}`, "aria-label": `搜索${meta.label}` }
 });
+search.value = state.query;
 
 const sortWrap = tools.createDiv({ cls: "media-category-sort" });
 sortWrap.createSpan({ text: "排序：" });
@@ -199,10 +227,15 @@ const sort = sortWrap.createEl("select", { attr: { "aria-label": "排序方式" 
 for (const [value, label] of [["recent", "最近加入"], ["rating", "评分最高"], ["year", "发行时间"], ["title", "标题"]]) {
   sort.createEl("option", { text: label, attr: { value } });
 }
+sort.value = state.sort;
 
 const viewSwitch = tools.createDiv({ cls: "media-category-view-switch", attr: { "aria-label": "显示方式" } });
 const gridButton = viewSwitch.createEl("button", { cls: "is-active", attr: { type: "button", "aria-label": "海报视图", "aria-pressed": "true" } });
 const listButton = viewSwitch.createEl("button", { attr: { type: "button", "aria-label": "列表视图", "aria-pressed": "false" } });
+gridButton.toggleClass("is-active", state.view === "grid");
+gridButton.setAttr("aria-pressed", state.view === "grid" ? "true" : "false");
+listButton.toggleClass("is-active", state.view === "list");
+listButton.setAttr("aria-pressed", state.view === "list" ? "true" : "false");
 if (setAppIcon(gridButton, "layout-grid") && setAppIcon(listButton, "list")) {
 } else {
   gridButton.setText("海报");
@@ -219,15 +252,8 @@ const matchesFilter = page => {
 
 const matchesSearch = page => {
   if (!state.query) return true;
-  const haystack = [
-    titleFor(page),
-    plainText(page.original_title),
-    ...toArray(page.genres).map(plainText),
-    ...toArray(page.authors).map(plainText),
-    ...toArray(page.directors).map(plainText),
-    ...toArray(page.platforms).map(plainText)
-  ].join(" ").toLocaleLowerCase();
-  return haystack.includes(state.query);
+  const entry = searchEntries.get(page.file.path);
+  return entry ? queryController.matches(entry, state.query) : false;
 };
 
 const compareItems = (a, b) => {
@@ -296,13 +322,14 @@ const render = () => {
   const emptyLabel = meta.mode ? "作品" : meta.label;
   empty.setText(state.query ? `没有找到与“${search.value.trim()}”匹配的${emptyLabel}。` : `这里暂时没有${emptyLabel}。`);
   for (const page of visible) renderCard(page);
+  persistState();
 };
 
 for (const [key, label, predicate] of filterDefs) {
   const count = allItems.filter(predicate).length;
   const button = filters.createEl("button", {
-    cls: key === "all" ? "is-active" : "",
-    attr: { type: "button", role: "tab", "aria-selected": key === "all" ? "true" : "false" }
+    cls: key === state.filter ? "is-active" : "",
+    attr: { type: "button", role: "tab", "aria-selected": key === state.filter ? "true" : "false" }
   });
   button.createSpan({ text: label });
   button.createSpan({ cls: "media-category-filter-count", text: String(count) });
@@ -318,7 +345,7 @@ for (const [key, label, predicate] of filterDefs) {
 }
 
 search.addEventListener("input", () => {
-  state.query = search.value.trim().toLocaleLowerCase();
+  state.query = queryController.normalize(search.value);
   render();
 });
 
@@ -346,3 +373,4 @@ listButton.addEventListener("click", () => {
 });
 
 render();
+queryController.bindScroll(dv.container, state, persistState);

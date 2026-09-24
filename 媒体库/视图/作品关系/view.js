@@ -222,6 +222,7 @@ const setRelatedWorks = async nextRelated => {
 
 const openPicker = ({ kind, options, excluded = [], onChoose }) => {
   const excludedPaths = new Set(excluded.map(linkPath));
+  const trigger = document.activeElement;
   const overlay = document.body.createDiv({ cls: "media-work-relation-overlay modal-container" });
   const modal = overlay.createDiv({
     cls: "media-work-relation-modal modal",
@@ -244,9 +245,31 @@ const openPicker = ({ kind, options, excluded = [], onChoose }) => {
   const close = () => {
     document.removeEventListener("keydown", onKeydown);
     overlay.remove();
+    if (trigger?.isConnected && typeof trigger.focus === "function") trigger.focus();
   };
   const onKeydown = event => {
-    if (event.key === "Escape") close();
+    if (event.key === "Escape") {
+      event.preventDefault();
+      close();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const focusable = [...modal.querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href]')]
+      .filter(element => element.getClientRects().length > 0);
+    if (!focusable.length) {
+      event.preventDefault();
+      closeButton.focus();
+      return;
+    }
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && (document.activeElement === first || !modal.contains(document.activeElement))) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && (document.activeElement === last || !modal.contains(document.activeElement))) {
+      event.preventDefault();
+      first.focus();
+    }
   };
   const renderOptions = () => {
     list.empty();

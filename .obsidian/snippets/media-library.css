@@ -1300,8 +1300,11 @@ body.theme-light:not([data-media-library-theme]) :is(.media-library-home, .media
 }
 
 .media-home-subtitle {
+  min-width: 0;
+  overflow: hidden;
   color: var(--media-muted);
   font-size: var(--font-ui-small);
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -8307,10 +8310,6 @@ body.theme-dark .quickAddModal.onePageInputModal .modal-content > div:last-child
   background: #202731;
   box-shadow: none;
   color: #d7dce2;
-  font-size: 0;
-}
-
-body.theme-dark .quickAddModal.onePageInputModal .modal-content > div:last-child > .setting-item button::after {
   font-size: 13px;
   font-weight: 620;
 }
@@ -8319,14 +8318,6 @@ body.theme-dark .quickAddModal.onePageInputModal .modal-content > div:last-child
   border-color: #7664d8;
   background: #6957d6;
   color: #fff;
-}
-
-body.theme-dark .quickAddModal.onePageInputModal .modal-content > div:last-child > .setting-item button.mod-cta::after {
-  content: "创建";
-}
-
-body.theme-dark .quickAddModal.onePageInputModal .modal-content > div:last-child > .setting-item button:not(.mod-cta)::after {
-  content: "取消";
 }
 
 @media (max-width: 560px) {
@@ -8548,20 +8539,9 @@ body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [place
 }
 
 body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion-back .quickadd-choice-suggestion-text {
-  font-size: 0;
-}
-
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion-back .quickadd-choice-suggestion-text::before {
   color: var(--media-quickadd-text);
-  content: "返回上一级";
   font-size: 14px;
   font-weight: 580;
-}
-
-body.theme-dark .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion-back .quickadd-choice-suggestion-text::after {
-  color: var(--media-quickadd-muted);
-  content: "重新选择媒体类型";
-  font-size: 11px;
 }
 
 /* Douban: dense, scan-friendly result list. */
@@ -8639,7 +8619,7 @@ body.theme-dark .prompt:has(input.prompt-input[placeholder^="选择一项内容"
   color: #eef1f4;
 }
 
-/* QuickAdd: polished one-page form and Chinese UI copy. */
+/* QuickAdd: one-page form styling; keep the plugin's own visible labels. */
 body.theme-dark .quickAddModal.onePageInputModal .modal {
   width: min(640px, calc(100vw - 32px));
   min-width: 0;
@@ -8665,19 +8645,10 @@ body.theme-dark .quickAddModal.onePageInputModal .qa-onepage-title {
   padding-left: 12px;
   border-left: 3px solid #9b7cf3;
   color: #e2e6eb;
-  font-size: 0;
-  line-height: 1.2;
-  text-align: left;
-}
-
-body.theme-dark .quickAddModal.onePageInputModal .qa-onepage-title::after {
-  content: "填写作品信息";
   font-size: 21px;
   font-weight: 720;
-}
-
-body.theme-dark .quickAddModal.onePageInputModal:has(select option[value="series"]) .qa-onepage-title::after {
-  content: "创建合集";
+  line-height: 1.2;
+  text-align: left;
 }
 
 body.theme-dark .quickAddModal.onePageInputModal .qa-onepage-preview {
@@ -8696,11 +8667,6 @@ body.theme-dark .quickAddModal.onePageInputModal .qa-onepage-preview-row {
 body.theme-dark .quickAddModal.onePageInputModal .qa-preview-key {
   min-width: 70px;
   color: #929ba7;
-  font-size: 0;
-}
-
-body.theme-dark .quickAddModal.onePageInputModal .qa-preview-key::after {
-  content: "文件名：";
   font-size: 12px;
   font-weight: 580;
 }
@@ -8726,15 +8692,6 @@ body.theme-dark .quickAddModal.onePageInputModal .setting-item-name {
   color: #cfd5dc;
   font-size: 13px;
   font-weight: 580;
-}
-
-body.theme-dark .quickAddModal.onePageInputModal .setting-item:has(select option[value="series"]) .setting-item-name {
-  font-size: 0;
-}
-
-body.theme-dark .quickAddModal.onePageInputModal .setting-item:has(select option[value="series"]) .setting-item-name::after {
-  content: "合集类型";
-  font-size: 13px;
 }
 
 body.theme-dark .quickAddModal.onePageInputModal .setting-item-control {
@@ -8773,20 +8730,8 @@ body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button {
   background: #202731;
   box-shadow: none;
   color: #d7dce2;
-  font-size: 0;
-}
-
-body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button::after {
   font-size: 13px;
   font-weight: 620;
-}
-
-body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button:first-child::after {
-  content: "创建";
-}
-
-body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button:last-child::after {
-  content: "取消";
 }
 
 body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button:first-child {
@@ -8831,135 +8776,7 @@ body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button:is(
   }
 }
 
-/* Mobile: menu prompts are tap-first, so do not summon the keyboard. */
 @media (max-width: 520px) {
-  .is-mobile .prompt:has(input.prompt-input:is(
-    [placeholder="新增作品"],
-    [placeholder="图书"],
-    [placeholder="电视剧"],
-    [placeholder="电影"],
-    [placeholder="动漫"],
-    [placeholder="游戏"],
-    [placeholder="综艺"],
-    [placeholder="纪录片"]
-  )) {
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: calc(100dvh - 88px);
-  }
-
-  .is-mobile .prompt:has(input.prompt-input:is(
-    [placeholder="新增作品"],
-    [placeholder="图书"],
-    [placeholder="电视剧"],
-    [placeholder="电影"],
-    [placeholder="动漫"],
-    [placeholder="游戏"],
-    [placeholder="综艺"],
-    [placeholder="纪录片"]
-  )) input.prompt-input {
-    display: none !important;
-  }
-
-  .is-mobile .prompt:has(input.prompt-input:is(
-    [placeholder="新增作品"],
-    [placeholder="图书"],
-    [placeholder="电视剧"],
-    [placeholder="电影"],
-    [placeholder="动漫"],
-    [placeholder="游戏"],
-    [placeholder="综艺"],
-    [placeholder="纪录片"]
-  )) .prompt-input-container {
-    display: flex;
-    min-height: 64px;
-    align-items: center;
-    padding: 0 52px 0 30px;
-  }
-
-  .is-mobile .prompt:has(input.prompt-input:is(
-    [placeholder="新增作品"],
-    [placeholder="图书"],
-    [placeholder="电视剧"],
-    [placeholder="电影"],
-    [placeholder="动漫"],
-    [placeholder="游戏"],
-    [placeholder="综艺"],
-    [placeholder="纪录片"]
-  )) .prompt-input-container::before {
-    top: 19px;
-    bottom: 19px;
-    left: 20px;
-  }
-
-  .is-mobile .prompt:has(input.prompt-input:is(
-    [placeholder="新增作品"],
-    [placeholder="图书"],
-    [placeholder="电视剧"],
-    [placeholder="电影"],
-    [placeholder="动漫"],
-    [placeholder="游戏"],
-    [placeholder="综艺"],
-    [placeholder="纪录片"]
-  )) .prompt-input-container::after {
-    position: static !important;
-    display: block !important;
-    color: var(--media-quickadd-text) !important;
-    font-size: 20px !important;
-    font-weight: 720 !important;
-    line-height: 1.2 !important;
-  }
-
-  .is-mobile .prompt:has(input.prompt-input[placeholder="新增作品"]) .prompt-input-container::after {
-    content: "新增作品" !important;
-  }
-
-  .is-mobile .prompt:has(input.prompt-input[placeholder="图书"]) .prompt-input-container::after {
-    content: "图书" !important;
-  }
-
-  .is-mobile .prompt:has(input.prompt-input[placeholder="电视剧"]) .prompt-input-container::after {
-    content: "电视剧" !important;
-  }
-
-  .is-mobile .prompt:has(input.prompt-input[placeholder="电影"]) .prompt-input-container::after {
-    content: "电影" !important;
-  }
-
-  .is-mobile .prompt:has(input.prompt-input[placeholder="动漫"]) .prompt-input-container::after {
-    content: "动漫" !important;
-  }
-
-  .is-mobile .prompt:has(input.prompt-input[placeholder="游戏"]) .prompt-input-container::after {
-    content: "游戏" !important;
-  }
-
-  .is-mobile .prompt:has(input.prompt-input[placeholder="综艺"]) .prompt-input-container::after {
-    content: "综艺" !important;
-  }
-
-  .is-mobile .prompt:has(input.prompt-input[placeholder="纪录片"]) .prompt-input-container::after {
-    content: "纪录片" !important;
-  }
-
-  .is-mobile .prompt:has(input.prompt-input[placeholder="新增作品"]) .prompt-results {
-    max-height: calc(100dvh - 174px);
-    padding: 12px;
-  }
-
-  .is-mobile .prompt:has(input.prompt-input:is(
-    [placeholder="图书"],
-    [placeholder="电视剧"],
-    [placeholder="电影"],
-    [placeholder="动漫"],
-    [placeholder="游戏"],
-    [placeholder="综艺"],
-    [placeholder="纪录片"]
-  )) .prompt-results {
-    max-height: calc(100dvh - 174px);
-    padding: 12px;
-  }
-
   /* Mobile category header: keep the count and CTA inside the viewport. */
   .media-category-header-actions {
     display: grid;
@@ -9000,124 +8817,5 @@ body.theme-dark .quickAddModal.onePageInputModal .qa-modal-button-row button:is(
   .media-library-note .media-progress-complete {
     grid-column: 1 / -1;
     justify-self: start;
-  }
-}
-
-/* Mobile QuickAdd title: reuse the reliably rendered ::before layer. */
-@media (max-width: 520px) {
-  .is-mobile .prompt:has(input.prompt-input:is(
-    [placeholder="新增作品"],
-    [placeholder="图书"],
-    [placeholder="电视剧"],
-    [placeholder="电影"],
-    [placeholder="动漫"],
-    [placeholder="游戏"],
-    [placeholder="综艺"],
-    [placeholder="纪录片"]
-  )) .prompt-input-container {
-    background-color: #181d24 !important;
-    background-image: linear-gradient(var(--media-mobile-title-accent, #9b7cf3), var(--media-mobile-title-accent, #9b7cf3)) !important;
-    background-position: 20px center !important;
-    background-repeat: no-repeat !important;
-    background-size: 3px 26px !important;
-  }
-
-  .is-mobile .prompt:has(input.prompt-input[placeholder="新增作品"]) {
-    --media-mobile-title-accent: #9b7cf3;
-  }
-
-  .is-mobile .prompt:has(input.prompt-input:is(
-    [placeholder="图书"],
-    [placeholder="电视剧"],
-    [placeholder="电影"],
-    [placeholder="动漫"],
-    [placeholder="游戏"],
-    [placeholder="综艺"],
-    [placeholder="纪录片"]
-  )) {
-    --media-mobile-title-accent: var(--media-quickadd-type);
-  }
-
-  .is-mobile .prompt:has(input.prompt-input:is(
-    [placeholder="新增作品"],
-    [placeholder="图书"],
-    [placeholder="电视剧"],
-    [placeholder="电影"],
-    [placeholder="动漫"],
-    [placeholder="游戏"],
-    [placeholder="综艺"],
-    [placeholder="纪录片"]
-  )) .prompt-input-container::before {
-    position: absolute !important;
-    z-index: 4 !important;
-    top: 50% !important;
-    right: 52px !important;
-    bottom: auto !important;
-    left: 30px !important;
-    display: block !important;
-    width: auto !important;
-    height: auto !important;
-    min-width: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: visible !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: none !important;
-    color: #e2e6eb !important;
-    font-size: 20px !important;
-    font-weight: 720 !important;
-    line-height: 1.2 !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    white-space: nowrap !important;
-    transform: translateY(-50%) !important;
-    pointer-events: none !important;
-  }
-
-  .is-mobile .prompt:has(input.prompt-input[placeholder="新增作品"]) .prompt-input-container::before {
-    content: "新增作品" !important;
-  }
-
-  .is-mobile .prompt:has(input.prompt-input[placeholder="图书"]) .prompt-input-container::before {
-    content: "图书" !important;
-  }
-
-  .is-mobile .prompt:has(input.prompt-input[placeholder="电视剧"]) .prompt-input-container::before {
-    content: "电视剧" !important;
-  }
-
-  .is-mobile .prompt:has(input.prompt-input[placeholder="电影"]) .prompt-input-container::before {
-    content: "电影" !important;
-  }
-
-  .is-mobile .prompt:has(input.prompt-input[placeholder="动漫"]) .prompt-input-container::before {
-    content: "动漫" !important;
-  }
-
-  .is-mobile .prompt:has(input.prompt-input[placeholder="游戏"]) .prompt-input-container::before {
-    content: "游戏" !important;
-  }
-
-  .is-mobile .prompt:has(input.prompt-input[placeholder="综艺"]) .prompt-input-container::before {
-    content: "综艺" !important;
-  }
-
-  .is-mobile .prompt:has(input.prompt-input[placeholder="纪录片"]) .prompt-input-container::before {
-    content: "纪录片" !important;
-  }
-
-  .is-mobile .prompt:has(input.prompt-input:is(
-    [placeholder="新增作品"],
-    [placeholder="图书"],
-    [placeholder="电视剧"],
-    [placeholder="电影"],
-    [placeholder="动漫"],
-    [placeholder="游戏"],
-    [placeholder="综艺"],
-    [placeholder="纪录片"]
-  )) .prompt-input-container::after {
-    display: none !important;
-    content: "" !important;
   }
 }

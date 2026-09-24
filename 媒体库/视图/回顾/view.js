@@ -1,4 +1,5 @@
 await dv.view("媒体库/视图/主题");
+await dv.view("媒体库/视图/健康规则");
 
 const typeController = window.__mediaLibraryTypeControllers?.get(app.vault.getName());
 const typeDefinitions = typeController?.getTypes() || [];
@@ -80,6 +81,11 @@ const currentYear = new Date().getFullYear();
 const workPages = dv.pages('"媒体库/作品"')
   .where(page => page.note_type === "media")
   .array();
+const allRecordPages = dv.pages('"媒体库/记录"')
+  .where(page => page.note_type === "media_experience")
+  .array();
+const orphanCount = window.__mediaLibraryHealth.inspect(workPages, allRecordPages)
+  .filter(issue => issue.code === "orphan-record").length;
 const workByPath = new Map();
 for (const page of workPages) {
   workByPath.set(page.file.path.replace(/\.md$/i, ""), page);
@@ -91,9 +97,8 @@ const workFor = record => {
   return workByPath.get(path) || workByPath.get(path.split("/").pop()) || dv.page(path) || null;
 };
 
-const verifiedRecords = dv.pages('"媒体库/记录"')
-  .where(page => page.note_type === "media_experience" && page.year_verified === true)
-  .array()
+const verifiedRecords = allRecordPages
+  .filter(page => page.year_verified === true && page.record_state !== "reopened")
   .map(record => {
     const work = workFor(record);
     const year = Math.round(numberFrom(record.verified_year));
@@ -241,6 +246,11 @@ const sectionTitle = (parent, title, subtitle = "") => {
 const render = () => {
   content.empty();
   headingLine.querySelector("h1").setText(`${state.year} 回顾`);
+  if (orphanCount) {
+    const notice = content.createDiv({ cls: "media-review-inline-empty" });
+    notice.createSpan({ text: `${orphanCount} 条体验记录找不到关联作品，暂未计入回顾。` });
+    addInternalLink(notice, "媒体库/导航/数据健康", "查看数据健康检查");
+  }
 
   const yearRecords = verifiedRecords
     .filter(item => item.year === state.year)
@@ -255,7 +265,7 @@ const render = () => {
     ? workPages.filter(page => ["进行中", "暂停"].includes(page.status))
     : [];
   const uniqueWorks = new Set(yearRecords.map(item => item.work.file.path)).size;
-  const repeats = Math.max(0, yearRecords.length - uniqueWorks);
+  const repeats = yearRecords.filter(item => item.index > 1).length;
   const crossYearCompleted = completed.filter(item => item.crossYear).length;
   const crossYearAbandoned = abandoned.filter(item => item.crossYear).length;
 
@@ -274,7 +284,7 @@ const render = () => {
   }
   const summaryFoot = content.createDiv({ cls: "media-review-summary-foot" });
   summaryFoot.createSpan({ text: `${uniqueWorks} 部作品` });
-  summaryFoot.createSpan({ text: repeats ? `${repeats} 次重复体验` : "本年暂无重复体验" });
+  summaryFoot.createSpan({ text: repeats ? `${repeats} 次重读／重看／重玩` : "本年暂无重读／重看／重玩" });
   if (crossYearCompleted) summaryFoot.createSpan({ text: `${crossYearCompleted} 次跨年完成` });
   if (crossYearAbandoned) summaryFoot.createSpan({ text: `${crossYearAbandoned} 次跨年弃置` });
 
