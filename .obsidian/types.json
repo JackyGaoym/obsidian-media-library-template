@@ -11,6 +11,7 @@
     "cover": "text",
     "backdrop": "text",
     "backdrop_position": "text",
+    "backdrop_scale": "number",
     "genres": "multitext",
     "release_date": "text",
     "status": "text",

@@ -3818,7 +3818,7 @@ body.theme-light:not([data-media-library-theme]) :is(.media-library-home, .media
 
 .media-work-hero::before {
   position: absolute;
-  z-index: -2;
+  z-index: -3;
   inset: -8px;
   background-image: var(--media-work-backdrop);
   background-repeat: no-repeat;
@@ -3833,10 +3833,48 @@ body.theme-light:not([data-media-library-theme]) :is(.media-library-home, .media
 }
 
 .media-work-hero.has-custom-backdrop::before {
-  background-position: var(--media-work-backdrop-position, center);
-  background-size: cover;
-  filter: blur(1.2px) saturate(0.92) contrast(1.02);
+  display: none;
+}
+
+.media-work-backdrop-layer {
+  position: absolute;
+  z-index: -2;
+  inset: -8px;
+  overflow: hidden;
   opacity: 0.42;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent 30%, rgba(0, 0, 0, 0.14) 46%, #000 70%);
+  mask-image: linear-gradient(90deg, transparent 30%, rgba(0, 0, 0, 0.14) 46%, #000 70%);
+}
+
+.media-work-backdrop-layer::before {
+  position: absolute;
+  inset: -18px;
+  background-image: var(--media-work-backdrop);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  content: "";
+  filter: blur(18px) saturate(0.92) contrast(1.02);
+}
+
+.media-work-hero:not(.is-backdrop-underfilled) .media-work-backdrop-layer::before,
+.media-work-hero:not(.has-custom-backdrop) .media-work-backdrop-layer {
+  display: none;
+}
+
+.media-work-backdrop-focus {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+  object-position: var(--media-work-backdrop-position, center);
+  transform: scale(var(--media-work-backdrop-scale, 1));
+  transform-origin: var(--media-work-backdrop-position, center);
+  filter: blur(1.2px) saturate(0.92) contrast(1.02);
 }
 
 .media-work-hero::after {
@@ -4122,11 +4160,39 @@ body.theme-light:not([data-media-library-theme]) :is(.media-library-home, .media
   pointer-events: none;
 }
 
+.media-backdrop-preview-fill {
+  filter: blur(16px) saturate(0.85);
+  transform: scale(1.08);
+}
+
+.media-backdrop-preview-focus {
+  object-fit: contain !important;
+  will-change: transform;
+}
+
 .media-backdrop-preview-shade {
   position: absolute;
   inset: 0;
   background: linear-gradient(90deg, color-mix(in srgb, var(--background-primary) 88%, transparent) 0%, color-mix(in srgb, var(--background-primary) 62%, transparent) 42%, transparent 78%);
   pointer-events: none;
+}
+
+.media-backdrop-zoom {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 4em;
+  align-items: center;
+  gap: 14px;
+}
+
+.media-backdrop-zoom input {
+  width: 100%;
+  margin: 0;
+}
+
+.media-backdrop-zoom-value {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
 .media-backdrop-editor-tools,
@@ -4159,17 +4225,23 @@ body.theme-light:not([data-media-library-theme]) :is(.media-library-home, .media
 .media-backdrop-picker-grid {
   display: grid;
   max-height: min(58vh, 560px);
-  overflow: auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-auto-rows: max-content;
+  align-content: start;
   gap: 12px;
   padding: 2px;
 }
 
 .media-backdrop-picker-card {
-  display: grid;
+  display: flex;
   overflow: hidden;
   min-width: 0;
+  min-height: 0;
   height: auto !important;
+  flex-direction: column;
   padding: 0 !important;
   border: 1px solid var(--background-modifier-border) !important;
   border-radius: 9px !important;
@@ -4185,13 +4257,20 @@ body.theme-light:not([data-media-library-theme]) :is(.media-library-home, .media
 }
 
 .media-backdrop-picker-card img {
+  display: block;
   width: 100%;
+  height: auto;
   aspect-ratio: 16 / 9;
+  flex: none;
   object-fit: cover;
 }
 
 .media-backdrop-picker-card span {
+  display: block;
   overflow: hidden;
+  width: 100%;
+  flex: none;
+  box-sizing: border-box;
   padding: 8px 10px 9px;
   font-size: var(--font-ui-small);
   text-overflow: ellipsis;
@@ -6433,7 +6512,7 @@ body.theme-light:not([data-media-library-theme]) :is(.media-library-home, .media
   }
 
   .media-work-hero::before,
-  .media-work-hero.has-custom-backdrop::before {
+  .media-work-backdrop-layer {
     opacity: 0.18;
     -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.5) 38%, transparent 78%);
     mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.5) 38%, transparent 78%);

@@ -54,6 +54,20 @@ const parseBackdropPosition = value => {
   };
 };
 
+const parseBackdropScale = value => {
+  const scale = Number(value);
+  return Number.isFinite(scale) && scale >= 0.05 && scale <= 2 ? scale : 1;
+};
+
+const backdropTravel = (width, height, imageWidth, imageHeight, scale) => {
+  const coverScale = Math.max(width / imageWidth, height / imageHeight);
+  return {
+    x: width - imageWidth * coverScale * scale,
+    y: height - imageHeight * coverScale * scale,
+    containScale: Math.min(width / imageWidth, height / imageHeight) / coverScale
+  };
+};
+
 const addFact = (facts, label, value) => {
   const text = plainText(value);
   if (text) facts.push({ label, value: text });
@@ -64,11 +78,37 @@ const customBackdrop = resourceUrl(page.backdrop);
 const backdrop = customBackdrop || cover;
 let liveBackdropPath = resourcePath(page.backdrop);
 let liveBackdropPosition = parseBackdropPosition(page.backdrop_position);
+let liveBackdropScale = parseBackdropScale(page.backdrop_scale);
 const root = dv.container.createDiv({
   cls: `media-work-hero is-${page.media_type || "media"}${customBackdrop ? " has-custom-backdrop" : " uses-cover-backdrop"}`
 });
+root.classList.toggle("is-backdrop-underfilled", Boolean(customBackdrop) && liveBackdropScale < 1);
 if (backdrop) root.style.setProperty("--media-work-backdrop", `url("${backdrop.replace(/"/g, "\\\"")}")`);
 root.style.setProperty("--media-work-backdrop-position", `${liveBackdropPosition.x}% ${liveBackdropPosition.y}%`);
+root.style.setProperty("--media-work-backdrop-scale", String(liveBackdropScale));
+const backdropLayer = root.createDiv({ cls: "media-work-backdrop-layer" });
+const backdropFocus = backdropLayer.createEl("img", {
+  cls: "media-work-backdrop-focus",
+  attr: { alt: "", "aria-hidden": "true" }
+});
+const updateBackdropFocusScale = () => {
+  if (!backdropFocus.naturalWidth || !backdropFocus.naturalHeight) return;
+  const rect = backdropLayer.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+  const { containScale } = backdropTravel(
+    rect.width, rect.height, backdropFocus.naturalWidth, backdropFocus.naturalHeight, liveBackdropScale
+  );
+  backdropFocus.style.transform = `scale(${liveBackdropScale / containScale})`;
+};
+backdropFocus.addEventListener("load", updateBackdropFocusScale);
+if (typeof ResizeObserver === "function") {
+  const resizeObserver = new ResizeObserver(() => {
+    if (!root.isConnected) resizeObserver.disconnect();
+    else updateBackdropFocusScale();
+  });
+  resizeObserver.observe(root);
+}
+if (customBackdrop) backdropFocus.setAttr("src", customBackdrop);
 
 const posterColumn = root.createDiv({ cls: "media-work-poster-column" });
 const poster = posterColumn.createDiv({ cls: "media-work-poster" });
@@ -672,21 +712,30 @@ const mountBackdropControl = () => {
       "--media-work-backdrop-position",
       `${liveBackdropPosition.x}% ${liveBackdropPosition.y}%`
     );
+    root.style.setProperty("--media-work-backdrop-scale", String(liveBackdropScale));
+    root.classList.toggle("is-backdrop-underfilled", Boolean(selectedUrl) && liveBackdropScale < 1);
+    if (selectedUrl) backdropFocus.setAttr("src", selectedUrl);
+    else backdropFocus.removeAttribute("src");
+    updateBackdropFocusScale();
     syncButton();
   };
 
-  const saveBackdrop = async (file, position) => {
+  const saveBackdrop = async (file, position, scale) => {
     try {
       const normalized = {
         x: Math.round(clamp(position.x, 0, 100)),
         y: Math.round(clamp(position.y, 0, 100))
       };
+      const normalizedScale = Math.round(clamp(scale, 0.05, 2) * 100) / 100;
       await writeFrontmatter(frontmatter => {
         frontmatter.backdrop = file.path;
         frontmatter.backdrop_position = `${normalized.x}% ${normalized.y}%`;
+        if (normalizedScale === 1) delete frontmatter.backdrop_scale;
+        else frontmatter.backdrop_scale = normalizedScale;
       });
       liveBackdropPath = file.path;
       liveBackdropPosition = normalized;
+      liveBackdropScale = normalizedScale;
       applyBackdropVisual();
       showNotice("横幅已保存");
       return true;
@@ -702,9 +751,11 @@ const mountBackdropControl = () => {
       await writeFrontmatter(frontmatter => {
         frontmatter.backdrop = "";
         delete frontmatter.backdrop_position;
+        delete frontmatter.backdrop_scale;
       });
       liveBackdropPath = "";
       liveBackdropPosition = { x: 50, y: 50 };
+      liveBackdropScale = 1;
       applyBackdropVisual();
       showNotice("已移除横幅，恢复使用封面背景");
       return true;
@@ -772,6 +823,7 @@ const mountBackdropControl = () => {
         super(app);
         this.pendingFile = currentFile && imagePattern.test(currentFile.name) ? currentFile : null;
         this.position = { ...liveBackdropPosition };
+        this.scale = liveBackdropScale;
       }
 
       onOpen() {
@@ -786,7 +838,7 @@ const mountBackdropControl = () => {
         const shell = this.contentEl.createDiv({ cls: "media-backdrop-picker" });
         shell.createDiv({
           cls: "media-backdrop-editor-hint",
-          text: "选择图片后，可以继续拖动调整显示区域。"
+          text: "选择图片后，可以拖动和缩放，调整显示区域。"
         });
 
         if (!files.length) {
@@ -829,6 +881,7 @@ const mountBackdropControl = () => {
                 const keepsPosition = liveBackdropPath === file.path;
                 this.pendingFile = file;
                 this.position = keepsPosition ? { ...liveBackdropPosition } : { x: 50, y: 50 };
+                this.scale = keepsPosition ? liveBackdropScale : 1;
                 this.renderAdjustment();
               });
             }
@@ -852,7 +905,7 @@ const mountBackdropControl = () => {
         const shell = this.contentEl.createDiv({ cls: "media-backdrop-editor" });
         shell.createDiv({
           cls: "media-backdrop-editor-hint",
-          text: "拖动图片，调整作品页中显示的部分。"
+          text: "拖动调整位置；缩放滑块移到最左侧可显示完整原图，空白处会以柔化图片填充。"
         });
 
         const preview = shell.createDiv({
@@ -860,32 +913,76 @@ const mountBackdropControl = () => {
           attr: {
             tabindex: "0",
             role: "group",
-            "aria-label": "横幅显示区域，可拖动图片或使用方向键调整"
+            "aria-label": "横幅显示区域，可拖动图片或使用方向键调整位置"
           }
         });
         preview.style.setProperty("--media-backdrop-preview-ratio", String(previewRatio));
+        const imageUrl = app.vault.getResourcePath(this.pendingFile);
+        preview.createEl("img", {
+          cls: "media-backdrop-preview-fill",
+          attr: { src: imageUrl, alt: "", "aria-hidden": "true" }
+        });
         const image = preview.createEl("img", {
-          attr: { src: app.vault.getResourcePath(this.pendingFile), alt: "" }
+          cls: "media-backdrop-preview-focus",
+          attr: { src: imageUrl, alt: "" }
         });
         preview.createDiv({ cls: "media-backdrop-preview-shade" });
 
         const updatePreview = () => {
-          image.style.objectPosition = `${this.position.x}% ${this.position.y}%`;
+          const position = `${this.position.x}% ${this.position.y}%`;
+          image.style.objectPosition = position;
+          image.style.transformOrigin = position;
+          if (!image.naturalWidth || !image.naturalHeight) return;
+          const rect = preview.getBoundingClientRect();
+          if (!rect.width || !rect.height) return;
+          const { containScale } = backdropTravel(
+            rect.width, rect.height, image.naturalWidth, image.naturalHeight, this.scale
+          );
+          image.style.transform = `scale(${this.scale / containScale})`;
         };
         updatePreview();
+
+        const zoomControl = shell.createDiv({ cls: "media-backdrop-zoom" });
+        const zoomLabel = zoomControl.createEl("label", { text: "缩放" });
+        const zoom = zoomControl.createEl("input", {
+          attr: { type: "range", min: "5", max: "200", step: "1", "aria-label": "横幅图片缩放" }
+        });
+        const zoomId = `media-backdrop-zoom-${Date.now()}`;
+        zoomLabel.setAttr("for", zoomId);
+        zoom.id = zoomId;
+        const zoomValue = zoomControl.createSpan({ cls: "media-backdrop-zoom-value" });
+        const updateZoom = () => {
+          zoom.value = String(Math.round(this.scale * 100));
+          zoomValue.setText(`${zoom.value}%`);
+          updatePreview();
+        };
+        const updateZoomMinimum = () => {
+          if (!image.naturalWidth || !image.naturalHeight) return;
+          const rect = preview.getBoundingClientRect();
+          const travel = backdropTravel(rect.width, rect.height, image.naturalWidth, image.naturalHeight, 1);
+          zoom.min = String(Math.max(5, Math.floor(Math.min(travel.containScale, this.scale) * 100)));
+          updateZoom();
+        };
+        image.addEventListener("load", updateZoomMinimum);
+        if (image.complete) updateZoomMinimum();
+        zoom.addEventListener("input", () => {
+          this.scale = Number(zoom.value) / 100;
+          updateZoom();
+        });
+        updateZoom();
 
         let dragState = null;
         const startDrag = event => {
           if (!image.naturalWidth || !image.naturalHeight) return;
           const rect = preview.getBoundingClientRect();
-          const scale = Math.max(rect.width / image.naturalWidth, rect.height / image.naturalHeight);
+          const travel = backdropTravel(rect.width, rect.height, image.naturalWidth, image.naturalHeight, this.scale);
           dragState = {
             pointerId: event.pointerId,
             startX: event.clientX,
             startY: event.clientY,
             position: { ...this.position },
-            overflowX: Math.max(0, image.naturalWidth * scale - rect.width),
-            overflowY: Math.max(0, image.naturalHeight * scale - rect.height)
+            travelX: travel.x,
+            travelY: travel.y
           };
           preview.setPointerCapture(event.pointerId);
           preview.addClass("is-dragging");
@@ -893,16 +990,16 @@ const mountBackdropControl = () => {
         };
         const moveDrag = event => {
           if (!dragState || event.pointerId !== dragState.pointerId) return;
-          if (dragState.overflowX > 0.5) {
+          if (Math.abs(dragState.travelX) > 0.5) {
             this.position.x = clamp(
-              dragState.position.x - (event.clientX - dragState.startX) / dragState.overflowX * 100,
+              dragState.position.x + (event.clientX - dragState.startX) / dragState.travelX * 100,
               0,
               100
             );
           }
-          if (dragState.overflowY > 0.5) {
+          if (Math.abs(dragState.travelY) > 0.5) {
             this.position.y = clamp(
-              dragState.position.y - (event.clientY - dragState.startY) / dragState.overflowY * 100,
+              dragState.position.y + (event.clientY - dragState.startY) / dragState.travelY * 100,
               0,
               100
             );
@@ -940,10 +1037,11 @@ const mountBackdropControl = () => {
         const tools = shell.createDiv({ cls: "media-backdrop-editor-tools" });
         tools.createEl("button", { text: "重新选择", attr: { type: "button" } })
           .addEventListener("click", () => this.renderPicker());
-        tools.createEl("button", { text: "恢复居中", attr: { type: "button" } })
+        tools.createEl("button", { text: "恢复默认", attr: { type: "button" } })
           .addEventListener("click", () => {
             this.position = { x: 50, y: 50 };
-            updatePreview();
+            this.scale = 1;
+            updateZoom();
             preview.focus();
           });
 
@@ -973,7 +1071,7 @@ const mountBackdropControl = () => {
         });
         saveButton.addEventListener("click", async () => {
           saveButton.disabled = true;
-          if (await saveBackdrop(this.pendingFile, this.position)) this.close();
+          if (await saveBackdrop(this.pendingFile, this.position, this.scale)) this.close();
           else saveButton.disabled = false;
         });
       }
