@@ -3,6 +3,7 @@ await dv.view("媒体库/视图/导入适配");
 const vaultName = app.vault.getName();
 
 const MEDIA_TYPE_CONFIG_PATH = "媒体库/配置/作品类型.json";
+const EXPERIENCE_PREFS_PATH = "媒体库/配置/体验记录.json";
 const MEDIA_TYPE_DEFAULTS = [
   {
     id: "book",
@@ -219,6 +220,27 @@ if (!typeControllers.has(vaultName)) {
       document.dispatchEvent(new CustomEvent("media-library-types-change", {
         detail: { vaultName, enabled: [...valid] }
       }));
+    },
+    async readExperiencePrefs() {
+      const fallback = { version: 1, notesSection: false };
+      const file = app.vault.getAbstractFileByPath(EXPERIENCE_PREFS_PATH);
+      if (!file) return fallback;
+      try {
+        const raw = JSON.parse(await app.vault.read(file));
+        return { version: 1, notesSection: raw?.notesSection === true };
+      } catch (error) {
+        console.warn("体验记录配置无法读取，已使用默认配置。", error);
+        return fallback;
+      }
+    },
+    async saveExperiencePrefs(notesSection) {
+      const normalized = { version: 1, notesSection: notesSection === true };
+      await ensureFolder(EXPERIENCE_PREFS_PATH.split("/").slice(0, -1).join("/"));
+      const content = `${JSON.stringify(normalized, null, 2)}\n`;
+      const file = app.vault.getAbstractFileByPath(EXPERIENCE_PREFS_PATH);
+      if (file) await app.vault.modify(file, content);
+      else await app.vault.create(EXPERIENCE_PREFS_PATH, content);
+      return normalized;
     },
     async launch(typeId, options = {}) {
       const type = defaultsById.get(typeId);
