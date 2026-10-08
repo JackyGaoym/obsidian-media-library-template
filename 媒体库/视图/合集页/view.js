@@ -228,6 +228,7 @@ const visualControls = profile.createDiv({ cls: "media-collection-visual-control
 const localizeCollectionImagePicker = noun => {
   const picker = document.querySelector(".mb-image-suggester-modal");
   if (!picker) return false;
+  picker.classList.add("media-library-image-picker");
 
   const title = picker.querySelector(".modal-title, .modal-header");
   if (title && title.textContent !== `选择${noun}`) title.textContent = `选择${noun}`;

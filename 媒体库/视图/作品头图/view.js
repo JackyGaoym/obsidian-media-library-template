@@ -146,6 +146,7 @@ const artworkActions = posterActions.createDiv({ cls: "media-work-artwork-action
 const localizeCoverPicker = () => {
   const picker = document.querySelector(".mb-image-suggester-modal");
   if (!picker) return false;
+  picker.classList.add("media-library-image-picker");
 
   const title = picker.querySelector(".modal-title, .modal-header");
   if (title && title.textContent !== "选择封面") title.textContent = "选择封面";

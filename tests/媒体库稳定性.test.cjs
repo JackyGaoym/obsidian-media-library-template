@@ -14,6 +14,23 @@ const typeSource = fs.readFileSync(path.join(root, '媒体库/视图/类型/view
 const adapterSource = fs.readFileSync(path.join(root, '媒体库/视图/导入适配/view.js'), 'utf8');
 const healthSource = fs.readFileSync(path.join(root, '媒体库/视图/健康规则/view.js'), 'utf8');
 
+test('media dialogs follow the library appearance independently of Obsidian', () => {
+  const css = fs.readFileSync(path.join(root, '.obsidian/snippets/media-library.css'), 'utf8');
+  const dark = css.match(/body\[data-media-library-theme="dark"\] :is\(([\s\S]*?)\),\s*body\.theme-dark:not/)?.[1] || '';
+  const light = css.match(/body\[data-media-library-theme="light"\] :is\(([\s\S]*?)\),\s*body\.theme-light:not/)?.[1] || '';
+  for (const selector of [
+    '.media-type-picker-modal', '.media-type-manager-modal', '.media-metadata-editor-modal',
+    '.media-backdrop-editor-modal', '.media-work-relation-modal', '.media-collection-add-modal',
+    '.mb-image-suggester-modal', '.quickAddModal.onePageInputModal'
+  ]) {
+    assert(dark.includes(selector), `night mode misses ${selector}`);
+    assert(light.includes(selector), `day mode misses ${selector}`);
+  }
+  assert.match(css, /body:is\(\[data-media-library-theme="dark"\], \.theme-dark:not\(\[data-media-library-theme\]\)\) \.quickAddModal/);
+  assert.doesNotMatch(css, /body\.theme-dark \.(?:prompt|quickAddModal)/);
+  assert.match(css, /body\[data-media-library-theme="light"\] \.quickAddModal\.onePageInputModal/);
+});
+
 function loadHealth() {
   const context = { window: {} };
   vm.createContext(context);
@@ -437,6 +454,7 @@ test('collection cover and backdrop pickers use Chinese labels and file names', 
   };
   const buttons = [{ textContent: 'Select none', setAttribute(name, value) { this[name] = value; } }, { textContent: 'Cancel', setAttribute(name, value) { this[name] = value; } }];
   const picker = {
+    classList: { add(name) { picker.marker = name; } },
     querySelector(selector) { return selector.startsWith('.modal-title') ? title : selector.startsWith('.mb-image-modal-header') ? search : close; },
     querySelectorAll(selector) { return selector === '.mb-image-card' ? [card] : buttons; }
   };
@@ -447,6 +465,7 @@ test('collection cover and backdrop pickers use Chinese labels and file names', 
   vm.createContext(context);
   vm.runInContext(declaration(collectionSource, 'localizeCollectionImagePicker') + '\nglobalThis.localizeCollectionImagePicker = localizeCollectionImagePicker;', context);
   assert.equal(context.localizeCollectionImagePicker('封面'), true);
+  assert.equal(picker.marker, 'media-library-image-picker');
   assert.equal(title.textContent, '选择封面');
   assert.equal(search.placeholder, '搜索封面图片…');
   assert.equal(label.textContent, '示例合集');
