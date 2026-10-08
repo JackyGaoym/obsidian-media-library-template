@@ -1585,11 +1585,27 @@ const historyProgress = frontmatter => {
   };
 };
 
-const createExperienceContent = data => {
+const EXPERIENCE_PREFS_PATH = "媒体库/配置/体验记录.json";
+
+const readExperiencePrefs = async () => {
+  const fallback = { version: 1, notesSection: false };
+  const prefsFile = app.vault.getAbstractFileByPath(EXPERIENCE_PREFS_PATH);
+  if (!prefsFile) return fallback;
+  try {
+    const raw = JSON.parse(await app.vault.read(prefsFile));
+    return { version: 1, notesSection: raw?.notesSection === true };
+  } catch (error) {
+    console.warn("体验记录配置无法读取，已使用默认配置。", error);
+    return fallback;
+  }
+};
+
+const createExperienceContent = (data, notesSection) => {
   const label = experienceLabels[page.media_type]?.noun || "体验";
   const workPath = page.file.path.replace(/\.md$/i, "");
   const rating = numberFrom(data.experience_rating);
-  return `---\nnote_type: media_experience\nwork: ${yamlText(`[[${workPath}|${page.title || page.file.name}]]`)}\nexperience_index: ${data.experience_index}\nresult: ${data.result}\nrecord_origin: ${data.record_origin}\ndate_certainty: ${data.date_certainty}\nyear_verified: ${data.year_verified}\nverified_year: ${data.verified_year || ""}\nstarted_at: ${data.started_at || ""}\nended_at: ${data.ended_at || ""}\nprogress_value: ${data.progress_value}\nprogress_total: ${data.progress_total || ""}\nprogress_unit: ${data.progress_unit}\nexperience_rating: ${rating > 0 ? rating : "null"}\nedition: ${data.edition ? yamlText(data.edition) : ""}\nplayed_on: []\ncreated_at: ${data.created_at}\ncssclasses:\n  - media-library-page\n---\n\n# ${page.title || page.file.name} · 第 ${data.experience_index} 次${label}\n\n[[${workPath}|← 返回作品]]\n\n## 本次记录\n\n\`\`\`dataviewjs\nawait dv.view("媒体库/视图/体验记录")\n\`\`\`\n\n`;
+  const notesTail = notesSection ? "\n\n---\n\n## 感想\n\n" : "\n\n";
+  return `---\nnote_type: media_experience\nwork: ${yamlText(`[[${workPath}|${page.title || page.file.name}]]`)}\nexperience_index: ${data.experience_index}\nresult: ${data.result}\nrecord_origin: ${data.record_origin}\ndate_certainty: ${data.date_certainty}\nyear_verified: ${data.year_verified}\nverified_year: ${data.verified_year || ""}\nstarted_at: ${data.started_at || ""}\nended_at: ${data.ended_at || ""}\nprogress_value: ${data.progress_value}\nprogress_total: ${data.progress_total || ""}\nprogress_unit: ${data.progress_unit}\nexperience_rating: ${rating > 0 ? rating : "null"}\nedition: ${data.edition ? yamlText(data.edition) : ""}\nplayed_on: []\ncreated_at: ${data.created_at}\ncssclasses:\n  - media-library-page\n---\n\n# ${page.title || page.file.name} · 第 ${data.experience_index} 次${label}\n\n[[${workPath}|← 返回作品]]\n\n## 本次记录\n\n\`\`\`dataviewjs\nawait dv.view("媒体库/视图/体验记录")\n\`\`\`${notesTail}`;
 };
 
 const upsertExperienceSnapshot = async (frontmatter, result, options = {}) => {
@@ -1633,7 +1649,8 @@ const upsertExperienceSnapshot = async (frontmatter, result, options = {}) => {
     file = app.vault.getAbstractFileByPath(path);
     if (file) updateDates = Boolean(options.dateChange);
     else {
-      file = await app.vault.create(path, createExperienceContent(data));
+      const prefs = await readExperiencePrefs();
+      file = await app.vault.create(path, createExperienceContent(data, prefs.notesSection));
       createdFile = true;
     }
   }
