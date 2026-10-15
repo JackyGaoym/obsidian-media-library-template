@@ -29,7 +29,7 @@ for (const file of [...views, '媒体库/首页.md', ...list('媒体库/导航')
 
 const typeLabels = {
   book: '图书', tv: '电视剧', movie: '电影', anime: '动漫',
-  game: '游戏', variety: '综艺', documentary: '纪录片'
+  game: '游戏', variety: '综艺', documentary: '纪录片', music: '音乐', short_drama: '短剧'
 };
 const config = JSON.parse(read('媒体库/配置/作品类型.json'));
 const propertyTypes = JSON.parse(read('.obsidian/types.json')).types;
@@ -105,4 +105,4 @@ const tests = fs.readdirSync(path.join(root, 'tests'))
 const result = spawnSync(process.execPath, ['--test', ...tests], { stdio: 'inherit' });
 if (result.error) throw result.error;
 assert.equal(result.status, 0, '回归测试失败');
-console.log(`发布校验通过：${views.length} 个视图、${tests.length} 个测试文件、七类数据及示例边界。`);
+console.log(`发布校验通过：${views.length} 个视图、${tests.length} 个测试文件、九类数据及示例边界。`);

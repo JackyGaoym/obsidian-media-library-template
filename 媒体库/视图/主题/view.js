@@ -1,3 +1,5 @@
+await dv.view("媒体库/视图/接口");
+
 const THEME_MODES = new Set(["system", "light", "dark"]);
 const vaultName = app.vault.getName();
 const storageKey = `media-library-theme-mode:${vaultName}`;

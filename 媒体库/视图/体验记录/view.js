@@ -62,7 +62,7 @@ const validYear = value => {
 
 const showNotice = message => {
   try {
-    const NoticeClass = typeof require === "function" ? require("obsidian").Notice : null;
+    const NoticeClass = window.__mediaLibraryObsidian?.Notice || (typeof require === "function" ? require("obsidian").Notice : null);
     if (NoticeClass) new NoticeClass(message);
   } catch (error) {
     console.error(message, error);
@@ -512,3 +512,7 @@ const render = () => {
 };
 
 render();
+await dv.view("媒体库/视图/心得", {
+  getPath: () => currentPath,
+  initialValue: String(currentPage.reflection || "")
+});

@@ -121,7 +121,7 @@ const progressFor = page => {
       known: total > 0
     };
   }
-  if (mediaType === "game") {
+  if (["game", "music"].includes(mediaType)) {
     const percent = Math.max(0, Math.min(100, numberFrom(page.progress_percent)));
     return { percent, label: `${percent}%`, known: true };
   }

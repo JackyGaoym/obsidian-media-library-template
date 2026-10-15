@@ -1,5 +1,6 @@
 await dv.view("媒体库/视图/主题");
 await dv.view("媒体库/视图/领域");
+await dv.view("媒体库/视图/删除");
 
 const domain = window.__mediaLibraryDomain;
 
@@ -252,6 +253,8 @@ const editMetadataButton = heading.createEl("button", {
   attr: { type: "button", "aria-label": "编辑作品资料", title: "编辑作品资料" }
 });
 const editMetadataIcon = editMetadataButton.createSpan({ cls: "media-work-edit-metadata-icon" });
+try { window.__mediaLibraryDeletion?.mount(app, heading, page.file.path); }
+catch (error) { console.error("删除入口加载失败，继续显示作品详情", error); }
 
 if (page.original_title) {
   info.createDiv({ cls: "media-work-original-title", text: plainText(page.original_title) });
@@ -270,6 +273,10 @@ if (workFormat === "movie") {
   addFact(facts, "页数", page.page_count ? `${page.page_count} 页` : "");
 } else if (workFormat === "game") {
   addFact(facts, "平台", toArray(page.platforms).map(plainText).filter(Boolean).slice(0, 3).join(" / "));
+} else if (workFormat === "music") {
+  addFact(facts, "专辑类型", page.album_type);
+  addFact(facts, "介质", page.medium);
+  addFact(facts, "发行方", page.publisher);
 }
 
 const countries = toArray(page.country).map(plainText).filter(Boolean);
@@ -308,6 +315,8 @@ const authors = toArray(page.authors).map(plainText).filter(Boolean);
 const directors = toArray(page.directors).map(plainText).filter(Boolean);
 if (authors.length) credits.push(`作者：${authors.slice(0, 3).join(" / ")}`);
 if (directors.length) credits.push(`导演：${directors.slice(0, 3).join(" / ")}`);
+const artists = toArray(page.artists).map(plainText).filter(Boolean);
+if (artists.length) credits.push(`表演者：${artists.slice(0, 3).join(" / ")}`);
 if (page.developer) credits.push(`开发：${plainText(page.developer)}`);
 if (credits.length) info.createDiv({ cls: "media-work-credits", text: credits.join("　") });
 
@@ -342,7 +351,7 @@ const setAppIcon = (element, name, fallback) => {
   try {
     const iconSetter = typeof setIcon === "function"
       ? setIcon
-      : (typeof require === "function" ? require("obsidian").setIcon : null);
+      : (window.__mediaLibraryObsidian?.setIcon || (typeof require === "function" ? require("obsidian").setIcon : null));
     if (iconSetter) {
       iconSetter(element, name);
       return;
@@ -356,7 +365,7 @@ const showNotice = message => {
   try {
     const NoticeClass = typeof Notice === "function"
       ? Notice
-      : (typeof require === "function" ? require("obsidian").Notice : null);
+      : (window.__mediaLibraryObsidian?.Notice || (typeof require === "function" ? require("obsidian").Notice : null));
     if (NoticeClass) new NoticeClass(message);
   } catch (error) {
     console.error(message, error);
@@ -423,6 +432,14 @@ const metadataFieldsFor = (mediaType, mediaFormat) => {
       { field: "isbn", label: "ISBN", group: "来源资料" },
       { field: "source_series", label: "豆瓣丛书", group: "来源资料" }
     );
+  } else if (mediaFormat === "music") {
+    fields.splice(detailIndex, 0,
+      { field: "artists", label: "表演者", group: "音乐资料", kind: "list" },
+      { field: "album_type", label: "专辑类型", group: "音乐资料" },
+      { field: "medium", label: "介质", group: "音乐资料" },
+      { field: "publisher", label: "发行方", group: "音乐资料" },
+      { field: "track_list", label: "曲目", group: "音乐资料", kind: "list", wide: true }
+    );
   } else if (mediaFormat === "game") {
     fields.splice(detailIndex, 0,
       { field: "platforms", label: "平台", group: "游戏资料", kind: "list" },
@@ -461,7 +478,7 @@ const mountMetadataEditor = () => {
   editMetadataButton.addEventListener("click", () => {
     let ModalClass;
     try {
-      ModalClass = typeof require === "function" ? require("obsidian").Modal : null;
+      ModalClass = window.__mediaLibraryObsidian?.Modal || (typeof require === "function" ? require("obsidian").Modal : null);
     } catch (error) {
       ModalClass = null;
     }
@@ -773,7 +790,7 @@ const mountBackdropControl = () => {
   const openEditor = () => {
     let ModalClass;
     try {
-      ModalClass = typeof require === "function" ? require("obsidian").Modal : null;
+      ModalClass = window.__mediaLibraryObsidian?.Modal || (typeof require === "function" ? require("obsidian").Modal : null);
     } catch (error) {
       ModalClass = null;
     }
@@ -1512,7 +1529,9 @@ const dateLabels = {
   anime: { started: "开始追番", finished: "看完日期" },
   game: { started: "开始游玩", finished: "通关日期" },
   variety: { started: "开始观看", finished: "看完日期" },
-  documentary: { started: "开始观看", finished: "看完日期" }
+  documentary: { started: "开始观看", finished: "看完日期" },
+  short_drama: { started: "开始观看", finished: "看完日期" },
+  music: { started: "开始收听", finished: "听完日期" }
 };
 
 const localToday = () => {
@@ -1530,7 +1549,9 @@ const experienceLabels = {
   anime: { noun: "观看", next: "开始重看" },
   game: { noun: "游玩", next: "开始重玩" },
   variety: { noun: "观看", next: "开始重看" },
-  documentary: { noun: "观看", next: "开始重看" }
+  documentary: { noun: "观看", next: "开始重看" },
+  short_drama: { noun: "观看", next: "开始重看" },
+  music: { noun: "收听", next: "再次收听" }
 };
 
 const experienceIndexFrom = value => Math.max(1, Math.round(numberFrom(value)) || 1);
@@ -1939,6 +1960,44 @@ const mountExperienceHistory = note => {
     void app.workspace.openLinkText(file.path, page.file.path, false);
   };
 
+  let reflectionModal = null;
+  const editReflection = record => {
+    if (reflectionModal) return;
+    const ModalClass = window.__mediaLibraryObsidian?.Modal;
+    if (!ModalClass) { showNotice("心得编辑器尚未加载，请重新打开作品页面"); return; }
+    const file = record.file;
+    if (app.vault.getAbstractFileByPath(file.path) !== file) {
+      showNotice("记录已被移动或删除，请重新打开作品页面");
+      return;
+    }
+    class ReflectionModal extends ModalClass {
+      onOpen() {
+        this.modalEl.addClass("media-metadata-editor-modal", "media-reflection-editor-modal");
+        const index = experienceIndexFrom(experienceFrontmatter(file).experience_index);
+        this.titleEl.setText(`第 ${index} 次${labels.noun} · 心得体会`);
+        void dv.view("媒体库/视图/心得", {
+          container: this.contentEl,
+          getPath: () => file.path,
+          initialValue: String(experienceFrontmatter(file).reflection || ""),
+          startEditing: true,
+          hideHeading: true,
+          onCancel: () => this.close(),
+          onSaved: () => this.close()
+        }).then(() => this.contentEl.querySelector("textarea")?.focus()).catch(error => {
+          console.error("心得编辑器加载失败", error);
+          showNotice("心得编辑器加载失败，请重试或打开体验记录编辑");
+          this.close();
+        });
+      }
+      onClose() {
+        reflectionModal = null;
+        this.contentEl.empty();
+      }
+    }
+    reflectionModal = new ReflectionModal(app);
+    reflectionModal.open();
+  };
+
   const renderHistory = () => {
     currentBadge.setText(`第 ${currentIndex} 次${labels.noun}`);
     const ended = liveStatus === "已完成" || liveStatus === "弃置";
@@ -1984,12 +2043,26 @@ const mountExperienceHistory = note => {
       const meta = record.frontmatter;
       const index = experienceIndexFrom(meta.experience_index);
       const item = history.createDiv({ cls: "media-experience-item" });
-      const main = item.createEl("a", {
+      const row = item.createDiv({ cls: "media-experience-item-header" });
+      const main = row.createEl("a", {
         cls: "media-experience-open",
         text: `第 ${index} 次${labels.noun}`,
         href: record.file.path
       });
       main.addEventListener("click", event => openRecord(record.file, event));
+      const edit = row.createEl("button", {
+        cls: "media-work-edit-metadata media-experience-reflection-edit",
+        attr: { type: "button", "aria-label": `编辑第 ${index} 次${labels.noun}的心得` }
+      });
+      setAppIcon(edit, "pencil", "✎");
+      const tooltip = window.__mediaLibraryObsidian?.setTooltip;
+      if (tooltip) tooltip(edit, "编辑心得");
+      else edit.setAttribute("title", "编辑心得");
+      edit.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        editReflection(record);
+      });
       const resultLabel = meta.record_state === "reopened"
         ? "已重新打开（暂不计入回顾）"
         : meta.result === "abandoned" ? "已弃置" : "已完成";

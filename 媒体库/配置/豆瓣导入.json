@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "settings": {
+    "bookTemplateFile": "媒体库/模板/豆瓣/豆瓣导入图书.md",
+    "movieTemplateFile": "媒体库/模板/豆瓣/豆瓣导入电影.md",
+    "teleplayTemplateFile": "媒体库/模板/豆瓣/豆瓣导入电视剧.md",
+    "gameTemplateFile": "媒体库/模板/豆瓣/豆瓣导入游戏.md",
+    "musicTemplateFile": "媒体库/模板/豆瓣/豆瓣导入音乐.md",
+    "dataFilePath": "",
+    "dataFileNamePath": "/媒体库/作品/{{title}}（{{yearPublished}}）",
+    "attachmentPath": "媒体库/作品/封面",
+    "attachmentFileName": "{{id}}-{{title}}",
+    "cacheImage": true,
+    "cacheHighQuantityImage": true,
+    "dateFormat": "yyyy-MM-DD"
+  },
+  "arraySettings": [
+    {
+      "arrayName": "ArrayTypeYaml",
+      "arrayStart": "",
+      "arrayElementStart": "\\n  - ",
+      "arraySpiltV2": "",
+      "arrayElementEnd": "",
+      "arrayEnd": "",
+      "index": 2
+    }
+  ],
+  "customProperties": [
+    { "name": "coverLink", "value": "[[{{image}}]]", "field": "all" }
+  ]
+}

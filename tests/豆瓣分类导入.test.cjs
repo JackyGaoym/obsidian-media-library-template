@@ -1,5 +1,8 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
+const fs = require("node:fs");
+const path = require("node:path");
+const recipe = JSON.parse(fs.readFileSync(path.join(__dirname, "../媒体库/配置/豆瓣导入.json"), "utf8"));
 
 global.window = globalThis;
 const importer = require("../媒体库/视图/主题/豆瓣分类导入.js");
@@ -12,6 +15,8 @@ const makeApp = () => {
   let context;
   let updateCount = 0;
   const plugin = {
+    settings: JSON.parse(JSON.stringify({ ...recipe.settings, arraySettings: recipe.arraySettings, customProperties: recipe.customProperties })),
+    async saveSettings() { throw new Error("configured imports must not save settings"); },
     getDoubanTextForCreateNewNoteForType(value) {
       context = value;
     },
@@ -30,6 +35,8 @@ const makeApp = () => {
     plugins: { plugins: { "obsidian-douban-plugin": plugin } },
     vault: {
       getName: () => name,
+      getAbstractFileByPath: target => ({ path: target, extension: target.split('.').at(-1) }),
+      read: file => fs.promises.readFile(path.join(__dirname, '..', file.path), 'utf8'),
       on: (_event, listener) => { listeners.add(listener); return listener; },
       offref: listener => listeners.delete(listener)
     },
@@ -59,10 +66,25 @@ const makeApp = () => {
 
 const nextTurn = () => new Promise(resolve => setImmediate(resolve));
 
+test("短剧使用影视入口并固定按集数记录，取消时不影响其他导入", async () => {
+  const state = makeApp();
+  await importer.short_drama(state);
+  assert.equal(state.listenerCount, 0);
+  const file = { path: "媒体库/作品/示例短剧.md", extension: "md" };
+  state.context.file = file;
+  state.context.properties = { note_type: "media", media_type: "movie", source: "douban", source_id: "800" };
+  await state.plugin.doubanExtractHandler.handle({ id: "800" }, state.context);
+  await nextTurn();
+  assert.equal(state.frontmatter.get(file).media_type, "short_drama");
+  assert.equal(state.frontmatter.get(file).media_format, "series");
+  assert.equal(state.frontmatter.get(file).current_episode, 0);
+  assert.equal(state.listenerCount, 0);
+});
+
 test("取消搜索不会监听或误归类其他豆瓣导入", async () => {
   const state = makeApp();
   const originalHandle = state.plugin.doubanExtractHandler.handle;
-  importer.variety(state);
+  await importer.variety(state);
   assert.equal(state.listenerCount, 0);
 
   const movie = { path: "媒体库/作品/别的电影.md", extension: "md" };
@@ -80,7 +102,7 @@ test("取消搜索不会监听或误归类其他豆瓣导入", async () => {
 
 test("仅将选中的豆瓣纪录电影归类，并保留单部形式", async () => {
   const state = makeApp();
-  importer.documentary(state);
+  await importer.documentary(state);
   const film = { path: "媒体库/作品/纪录电影.md", extension: "md" };
   state.context.file = film;
   state.context.properties = {
@@ -96,7 +118,7 @@ test("仅将选中的豆瓣纪录电影归类，并保留单部形式", async ()
 
 test("豆瓣 ID 不匹配时不修改新作品", async () => {
   const state = makeApp();
-  importer.variety(state);
+  await importer.variety(state);
   const series = { path: "媒体库/作品/其他剧集.md", extension: "md" };
   state.context.file = series;
   state.context.properties = {
@@ -111,7 +133,7 @@ test("豆瓣 ID 不匹配时不修改新作品", async () => {
 
 test("选中的电视剧条目按剧集综艺记录", async () => {
   const state = makeApp();
-  importer.variety(state);
+  await importer.variety(state);
   const series = { path: "媒体库/作品/综艺节目.md", extension: "md" };
   state.context.file = series;
   state.context.properties = {

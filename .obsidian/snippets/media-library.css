@@ -1096,13 +1096,13 @@
 /* Media-library appearance can follow Obsidian or be pinned independently. */
 body[data-media-library-theme="dark"] :is(
   .media-library-home, .media-library-page, .media-library-note,
-  .modal.media-type-picker-modal, .modal.media-type-manager-modal,
+  .modal.media-type-picker-modal, .modal.media-type-manager-modal, .modal.media-delete-modal,
   .modal.media-metadata-editor-modal, .modal.media-backdrop-editor-modal,
   .modal.media-work-relation-modal, .modal.media-collection-add-modal,
   .mb-image-suggester-modal.media-library-image-picker, .modal:has(.mb-image-suggester-modal.media-library-image-picker),
   .quickAddModal.onePageInputModal .modal,
   .prompt:has(input.prompt-input[placeholder="新增作品"]),
-  .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])),
+  .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])),
   .prompt:has(input.prompt-input[placeholder^="选择一项内容"])
 ),
 body.theme-dark:not([data-media-library-theme]) :is(.media-library-home, .media-library-page, .media-library-note) {
@@ -1147,13 +1147,13 @@ body.theme-dark:not([data-media-library-theme]) :is(.media-library-home, .media-
 
 body[data-media-library-theme="light"] :is(
   .media-library-home, .media-library-page, .media-library-note,
-  .modal.media-type-picker-modal, .modal.media-type-manager-modal,
+  .modal.media-type-picker-modal, .modal.media-type-manager-modal, .modal.media-delete-modal,
   .modal.media-metadata-editor-modal, .modal.media-backdrop-editor-modal,
   .modal.media-work-relation-modal, .modal.media-collection-add-modal,
   .mb-image-suggester-modal.media-library-image-picker, .modal:has(.mb-image-suggester-modal.media-library-image-picker),
   .quickAddModal.onePageInputModal .modal,
   .prompt:has(input.prompt-input[placeholder="新增作品"]),
-  .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])),
+  .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])),
   .prompt:has(input.prompt-input[placeholder^="选择一项内容"])
 ),
 body.theme-light:not([data-media-library-theme]) :is(.media-library-home, .media-library-page, .media-library-note) {
@@ -4557,9 +4557,12 @@ body.theme-light:not([data-media-library-theme]) :is(.media-library-home, .media
   flex: 0 1 auto;
 }
 
-.media-work-edit-metadata {
+.media-work-edit-metadata,
+.media-entry-delete {
   display: inline-flex;
   width: 30px;
+  height: 30px;
+  min-width: 30px;
   min-height: 30px !important;
   flex: 0 0 auto;
   align-items: center;
@@ -4569,13 +4572,15 @@ body.theme-light:not([data-media-library-theme]) :is(.media-library-home, .media
   border: 1px solid color-mix(in srgb, var(--interactive-accent) 18%, var(--media-card-border)) !important;
   border-radius: 8px;
   background: color-mix(in srgb, var(--background-primary) 88%, var(--background-secondary)) !important;
+  background-image: none !important;
   box-shadow: none !important;
   color: var(--text-accent);
   font-size: var(--font-ui-smaller);
   font-weight: 650;
 }
 
-.media-work-edit-metadata:hover {
+.media-work-edit-metadata:hover,
+.media-entry-delete:hover {
   border-color: color-mix(in srgb, var(--interactive-accent) 42%, var(--media-card-border)) !important;
   background: color-mix(in srgb, var(--interactive-accent) 7%, var(--background-primary)) !important;
   color: var(--interactive-accent-hover);
@@ -4589,7 +4594,9 @@ body.theme-light:not([data-media-library-theme]) :is(.media-library-home, .media
   justify-content: center;
 }
 
-.media-work-edit-metadata-icon svg {
+.media-work-edit-metadata-icon svg,
+.media-experience-reflection-edit svg,
+.media-entry-delete svg {
   width: 15px;
   height: 15px;
 }
@@ -5342,6 +5349,18 @@ body.theme-light:not([data-media-library-theme]) :is(.media-library-home, .media
   font-size: var(--font-ui-small);
   font-weight: 650;
   text-decoration: none !important;
+}
+
+.media-library-note .media-experience-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.media-library-note .media-experience-item-header .media-experience-open {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .media-library-note .media-experience-open:hover {
@@ -8451,7 +8470,7 @@ body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-t
 }
 
 /* QuickAdd: compact second-level import/manual chooser. */
-body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) {
+body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])) {
   --media-quickadd-type: #9b7cf3;
   --media-quickadd-surface: #171c22;
   --media-quickadd-row: #1a2027;
@@ -8499,11 +8518,11 @@ body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-t
   --media-quickadd-type: #e56bb3;
 }
 
-body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input[placeholder="纪录片"]) {
+body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input[placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"]) {
   --media-quickadd-type: #6f8fe8;
 }
 
-body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .prompt-input-container {
+body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])) .prompt-input-container {
   position: relative;
   min-height: 92px;
   padding: 20px 52px 18px 30px;
@@ -8511,7 +8530,7 @@ body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-t
   background: #181d24;
 }
 
-body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .prompt-input-container::before {
+body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])) .prompt-input-container::before {
   position: absolute;
   top: 21px;
   bottom: 39px;
@@ -8522,7 +8541,7 @@ body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-t
   content: "";
 }
 
-body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .prompt-input-container::after {
+body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])) .prompt-input-container::after {
   position: absolute;
   bottom: 18px;
   left: 30px;
@@ -8533,7 +8552,7 @@ body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-t
   pointer-events: none;
 }
 
-body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) input.prompt-input {
+body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])) input.prompt-input {
   height: 30px;
   padding: 0;
   border: 0;
@@ -8546,28 +8565,28 @@ body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-t
   line-height: 30px;
 }
 
-body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) input.prompt-input:placeholder-shown {
+body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])) input.prompt-input:placeholder-shown {
   caret-color: transparent;
 }
 
-body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) input.prompt-input::placeholder {
+body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])) input.prompt-input::placeholder {
   color: var(--media-quickadd-text);
   opacity: 1;
 }
 
-body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .prompt-results {
+body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])) .prompt-results {
   max-height: min(380px, calc(100vh - 148px));
   padding: 16px 20px 20px;
   background: var(--media-quickadd-surface);
 }
 
-body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) :is(.suggestion-container, .suggestion) {
+body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])) :is(.suggestion-container, .suggestion) {
   overflow: visible;
   padding: 0;
   background: transparent;
 }
 
-body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion {
+body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])) .quickadd-choice-suggestion {
   position: relative;
   display: flex;
   align-items: center;
@@ -8580,26 +8599,26 @@ body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-t
   color: var(--media-quickadd-text);
 }
 
-body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion:first-child {
+body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])) .quickadd-choice-suggestion:first-child {
   border-radius: 9px 9px 0 0;
 }
 
-body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion:nth-child(2) {
+body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])) .quickadd-choice-suggestion:nth-child(2) {
   border-bottom: 1px solid var(--media-quickadd-border);
   border-radius: 0 0 9px 9px;
 }
 
-body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion:is(:hover, .is-selected) {
+body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])) .quickadd-choice-suggestion:is(:hover, .is-selected) {
   background: color-mix(in srgb, var(--media-quickadd-type) 9%, var(--media-quickadd-row-hover));
   box-shadow: inset 3px 0 0 var(--media-quickadd-type);
 }
 
-body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion-content {
+body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])) .quickadd-choice-suggestion-content {
   gap: 13px;
   width: 100%;
 }
 
-body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-icon {
+body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])) .quickadd-choice-icon {
   display: inline-flex;
   flex: 0 0 27px;
   align-items: center;
@@ -8610,7 +8629,7 @@ body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-t
   --icon-stroke: 1.8px;
 }
 
-body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion-text {
+body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])) .quickadd-choice-suggestion-text {
   display: grid;
   gap: 4px;
   min-width: 0;
@@ -8620,22 +8639,22 @@ body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-t
   line-height: 1.2;
 }
 
-body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion-text::after {
+body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])) .quickadd-choice-suggestion-text::after {
   color: var(--media-quickadd-muted);
   font-size: 12px;
   font-weight: 450;
   line-height: 1.2;
 }
 
-body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion:has(.lucide-download) .quickadd-choice-suggestion-text::after {
+body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])) .quickadd-choice-suggestion:has(.lucide-download) .quickadd-choice-suggestion-text::after {
   content: "自动搜索并导入条目信息";
 }
 
-body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion:has(.lucide-pencil-line) .quickadd-choice-suggestion-text::after {
+body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])) .quickadd-choice-suggestion:has(.lucide-pencil-line) .quickadd-choice-suggestion-text::after {
   content: "手动填写作品信息";
 }
 
-body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion-back {
+body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])) .quickadd-choice-suggestion-back {
   min-height: 48px;
   margin-top: 12px;
   border: 1px solid transparent;
@@ -8644,13 +8663,13 @@ body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-t
   color: var(--media-quickadd-muted);
 }
 
-body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion-back:is(:hover, .is-selected) {
+body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])) .quickadd-choice-suggestion-back:is(:hover, .is-selected) {
   border-color: var(--media-quickadd-border);
   background: #1a2027;
   box-shadow: none;
 }
 
-body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])) .quickadd-choice-suggestion-back .quickadd-choice-suggestion-text {
+body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])) .quickadd-choice-suggestion-back .quickadd-choice-suggestion-text {
   color: var(--media-quickadd-text);
   font-size: 14px;
   font-weight: 580;
@@ -8857,7 +8876,7 @@ body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-t
 }
 
 @media (max-width: 640px) {
-  body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])),
+  body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])),
   body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-theme])) .prompt:has(input.prompt-input[placeholder^="选择一项内容"]) {
     width: calc(100vw - 20px);
     max-width: calc(100vw - 20px);
@@ -8937,7 +8956,7 @@ body:is([data-media-library-theme="dark"], .theme-dark:not([data-media-library-t
 body[data-media-library-theme="light"] :is(
   .quickAddModal.onePageInputModal .modal,
   .prompt:has(input.prompt-input[placeholder="新增作品"]),
-  .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])),
+  .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])),
   .prompt:has(input.prompt-input[placeholder^="选择一项内容"])
 ) {
   border: 1px solid var(--background-modifier-border);
@@ -8949,7 +8968,7 @@ body[data-media-library-theme="light"] :is(
 body[data-media-library-theme="light"] .quickAddModal.onePageInputModal :is(.modal-content, .qa-onepage-preview, .setting-item),
 body[data-media-library-theme="light"] :is(
   .prompt:has(input.prompt-input[placeholder="新增作品"]),
-  .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"])),
+  .prompt:has(input.prompt-input:is([placeholder="图书"], [placeholder="电视剧"], [placeholder="电影"], [placeholder="动漫"], [placeholder="游戏"], [placeholder="综艺"], [placeholder="纪录片"], [placeholder="音乐"], [placeholder="短剧"])),
   .prompt:has(input.prompt-input[placeholder^="选择一项内容"])
 ) :is(.prompt-input-container, .prompt-results, .suggestion-container) {
   border-color: var(--background-modifier-border);
@@ -8958,7 +8977,7 @@ body[data-media-library-theme="light"] :is(
 }
 
 body[data-media-library-theme] :is(
-  .modal.media-type-picker-modal, .modal.media-type-manager-modal,
+  .modal.media-type-picker-modal, .modal.media-type-manager-modal, .modal.media-delete-modal,
   .modal.media-metadata-editor-modal, .modal.media-backdrop-editor-modal,
   .modal.media-work-relation-modal, .modal.media-collection-add-modal,
   .mb-image-suggester-modal.media-library-image-picker, .modal:has(.mb-image-suggester-modal.media-library-image-picker),
@@ -8967,4 +8986,56 @@ body[data-media-library-theme] :is(
   border-color: var(--background-modifier-border);
   background: var(--background-modifier-form-field);
   color: var(--text-normal);
+}
+
+/* Additional media types keep the shared purple actions. */
+:is(.media-type-picker-card, .media-type-manager-row, .media-home-category,
+    .media-home-type, .media-home-active-type, .media-home-active-item,
+    .media-home-backlog-chip, .media-category-page, .media-category-card).is-music,
+.media-library-note:has(.media-work-hero.is-music) {
+  --media-type-color: #41bdb5;
+}
+:is(.media-type-picker-card, .media-type-manager-row, .media-home-category,
+    .media-home-type, .media-home-active-type, .media-home-active-item,
+    .media-home-backlog-chip, .media-category-page, .media-category-card).is-short_drama,
+.media-library-note:has(.media-work-hero.is-short_drama) {
+  --media-type-color: #e5915a;
+}
+.media-collection-title-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+.media-collection-title-row .media-collection-title {
+  min-width: 0;
+  margin: 0 !important;
+}
+.media-entry-delete:focus-visible { outline: 2px solid var(--text-accent); outline-offset: 2px; }
+.media-delete-modal { width: min(540px, calc(100vw - 32px)); }
+.media-delete-help { color: var(--text-muted); font-size: var(--font-ui-small); line-height: 1.6; }
+.media-delete-records { display: flex; align-items: center; gap: 10px; margin: 18px 0 8px; }
+.media-delete-records input { flex: 0 0 auto; margin: 0; }
+.media-delete-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.media-experience-reflection { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--media-card-border); }
+.media-reflection-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.media-reflection-header h2 { margin: 0; font-size: 20px; }
+.media-reflection-content { overflow-wrap: anywhere; line-height: 1.7; }
+.media-reflection-content.is-empty { color: var(--text-muted); }
+.media-reflection-editor {
+  width: 100%; min-height: 180px; padding: 12px 14px;
+  border: 1px solid var(--media-card-border); border-radius: 8px;
+  background: var(--background-primary-alt); color: var(--text-normal);
+  font: inherit; line-height: 1.7; resize: vertical; box-sizing: border-box;
+}
+.media-reflection-editor:focus { border-color: var(--interactive-accent); outline: 2px solid color-mix(in srgb, var(--interactive-accent) 20%, transparent); }
+.modal.media-reflection-editor-modal { width: min(640px, calc(100vw - 32px)); box-sizing: border-box; }
+.modal.media-douban-config-modal { width: min(620px, calc(100vw - 32px)); box-sizing: border-box; }
+.media-reflection-editor-modal .media-experience-reflection { margin: 0; padding: 0; border: 0; }
+.media-reflection-editor-modal .media-reflection-header:empty { display: none; }
+@media (max-width: 520px) {
+  .media-work-edit-metadata,
+  .media-entry-delete { width: 44px; height: 44px; min-width: 44px; }
+  .media-reflection-header { align-items: flex-start; }
 }

@@ -29,9 +29,10 @@
                 "commands": [
                   {
                     "id": "3e82199e-f7c0-421a-82d0-67e50d21d4d2",
-                    "name": "豆瓣：搜索图书并创建文件",
-                    "type": "Obsidian",
-                    "commandId": "obsidian-douban-plugin:searcher-douban-import-and-create-file-book"
+                    "name": "豆瓣分类导入::book",
+                    "type": "UserScript",
+                    "path": "媒体库/视图/主题/豆瓣分类导入.js",
+                    "settings": {}
                   }
                 ]
               },
@@ -95,9 +96,10 @@
                 "commands": [
                   {
                     "id": "0a22ee8c-b305-4ff3-99bd-a08931640145",
-                    "name": "豆瓣：搜索影视并创建文件",
-                    "type": "Obsidian",
-                    "commandId": "obsidian-douban-plugin:searcher-douban-import-and-create-file-movie-tv"
+                    "name": "豆瓣分类导入::tv",
+                    "type": "UserScript",
+                    "path": "媒体库/视图/主题/豆瓣分类导入.js",
+                    "settings": {}
                   }
                 ]
               },
@@ -161,9 +163,10 @@
                 "commands": [
                   {
                     "id": "1a8434c2-6360-42a7-88a8-c987be9fe2ec",
-                    "name": "豆瓣：搜索影视并创建文件",
-                    "type": "Obsidian",
-                    "commandId": "obsidian-douban-plugin:searcher-douban-import-and-create-file-movie-tv"
+                    "name": "豆瓣分类导入::movie",
+                    "type": "UserScript",
+                    "path": "媒体库/视图/主题/豆瓣分类导入.js",
+                    "settings": {}
                   }
                 ]
               },
@@ -227,9 +230,10 @@
                 "commands": [
                   {
                     "id": "94738474-3485-4377-bef3-c7647341e06f",
-                    "name": "豆瓣：搜索影视并创建文件",
-                    "type": "Obsidian",
-                    "commandId": "obsidian-douban-plugin:searcher-douban-import-and-create-file-movie-tv"
+                    "name": "豆瓣分类导入::anime",
+                    "type": "UserScript",
+                    "path": "媒体库/视图/主题/豆瓣分类导入.js",
+                    "settings": {}
                   }
                 ]
               },
@@ -293,9 +297,10 @@
                 "commands": [
                   {
                     "id": "3eb0285b-2e76-46cb-a0b0-57124197cb01",
-                    "name": "豆瓣：搜索游戏并创建文件",
-                    "type": "Obsidian",
-                    "commandId": "obsidian-douban-plugin:searcher-douban-import-and-create-file-game"
+                    "name": "豆瓣分类导入::game",
+                    "type": "UserScript",
+                    "path": "媒体库/视图/主题/豆瓣分类导入.js",
+                    "settings": {}
                   }
                 ]
               },
@@ -383,7 +388,9 @@
               "discoverExistingNotesBeforeCreate": true,
               "folder": {
                 "enabled": true,
-                "folders": ["媒体库/作品"],
+                "folders": [
+                  "媒体库/作品"
+                ],
                 "chooseWhenCreatingNote": false,
                 "createInSameFolderAsActiveFile": false,
                 "chooseFromSubfolders": false
@@ -391,8 +398,15 @@
               "appendLink": false,
               "copyLinkToClipboard": false,
               "openFile": true,
-              "fileOpening": { "location": "tab", "direction": "vertical", "mode": "default", "focus": true },
-              "fileExistsBehavior": { "kind": "prompt" }
+              "fileOpening": {
+                "location": "tab",
+                "direction": "vertical",
+                "mode": "default",
+                "focus": true
+              },
+              "fileExistsBehavior": {
+                "kind": "prompt"
+              }
             }
           ]
         },
@@ -441,7 +455,9 @@
               "discoverExistingNotesBeforeCreate": true,
               "folder": {
                 "enabled": true,
-                "folders": ["媒体库/作品"],
+                "folders": [
+                  "媒体库/作品"
+                ],
                 "chooseWhenCreatingNote": false,
                 "createInSameFolderAsActiveFile": false,
                 "chooseFromSubfolders": false
@@ -449,8 +465,149 @@
               "appendLink": false,
               "copyLinkToClipboard": false,
               "openFile": true,
-              "fileOpening": { "location": "tab", "direction": "vertical", "mode": "default", "focus": true },
-              "fileExistsBehavior": { "kind": "prompt" }
+              "fileOpening": {
+                "location": "tab",
+                "direction": "vertical",
+                "mode": "default",
+                "focus": true
+              },
+              "fileExistsBehavior": {
+                "kind": "prompt"
+              }
+            }
+          ]
+        },
+        {
+          "id": "edc9f5fb-1a6f-490c-bd02-d50925393948",
+          "name": "音乐",
+          "type": "Multi",
+          "command": true,
+          "icon": "disc-3",
+          "collapsed": false,
+          "choices": [
+            {
+              "id": "d5bc94c2-51b8-4581-82fb-d94439dc8721",
+              "name": "豆瓣导入音乐",
+              "type": "Macro",
+              "command": false,
+              "icon": "download",
+              "onePageInput": "never",
+              "macro": {
+                "id": "2f4b7965-5cfa-4c99-8cbd-58ab45c68559",
+                "name": "豆瓣导入音乐",
+                "commands": [
+                  {
+                    "id": "babe777c-e3bc-40f3-a611-44a644da0206",
+                    "name": "豆瓣分类导入::music",
+                    "type": "UserScript",
+                    "path": "媒体库/视图/主题/豆瓣分类导入.js",
+                    "settings": {}
+                  }
+                ]
+              },
+              "runOnStartup": false
+            },
+            {
+              "id": "44f117d7-3e2c-415d-9bbe-4a303b16a7d4",
+              "name": "手动新增音乐",
+              "type": "Template",
+              "command": false,
+              "icon": "pencil-line",
+              "onePageInput": "always",
+              "templatePath": "媒体库/模板/手动/手动新增音乐.md",
+              "fileNameFormat": {
+                "enabled": true,
+                "format": "{{VALUE:标题}}（{{VALUE:发行年份|default:未知年份}}）"
+              },
+              "discoverExistingNotesBeforeCreate": true,
+              "folder": {
+                "enabled": true,
+                "folders": [
+                  "媒体库/作品"
+                ],
+                "chooseWhenCreatingNote": false,
+                "createInSameFolderAsActiveFile": false,
+                "chooseFromSubfolders": false
+              },
+              "appendLink": false,
+              "copyLinkToClipboard": false,
+              "openFile": true,
+              "fileOpening": {
+                "location": "tab",
+                "direction": "vertical",
+                "mode": "default",
+                "focus": true
+              },
+              "fileExistsBehavior": {
+                "kind": "prompt"
+              }
+            }
+          ]
+        },
+        {
+          "id": "f10f9a3c-591f-4eb2-816a-fadafc873b7b",
+          "name": "短剧",
+          "type": "Multi",
+          "command": true,
+          "icon": "smartphone",
+          "collapsed": false,
+          "choices": [
+            {
+              "id": "80d349c7-4c4d-4aba-8ee0-c92a67d4ecf3",
+              "name": "豆瓣导入短剧",
+              "type": "Macro",
+              "command": false,
+              "icon": "download",
+              "onePageInput": "never",
+              "macro": {
+                "id": "600dee8d-2fe8-4aa6-b69d-30fac87b0da1",
+                "name": "豆瓣导入短剧",
+                "commands": [
+                  {
+                    "id": "49bd203c-529e-408b-b89d-abbf4321f5ec",
+                    "type": "UserScript",
+                    "path": "媒体库/视图/主题/豆瓣分类导入.js",
+                    "settings": {},
+                    "name": "豆瓣分类导入::short_drama"
+                  }
+                ]
+              },
+              "runOnStartup": false
+            },
+            {
+              "id": "b3de28c8-4a70-4ec2-a1f5-66661e7ceac4",
+              "name": "手动新增短剧",
+              "type": "Template",
+              "command": false,
+              "icon": "pencil-line",
+              "onePageInput": "always",
+              "templatePath": "媒体库/模板/手动/手动新增短剧.md",
+              "fileNameFormat": {
+                "enabled": true,
+                "format": "{{VALUE:标题}}（{{VALUE:发行年份|default:未知年份}}）"
+              },
+              "discoverExistingNotesBeforeCreate": true,
+              "folder": {
+                "enabled": true,
+                "folders": [
+                  "媒体库/作品"
+                ],
+                "chooseWhenCreatingNote": false,
+                "createInSameFolderAsActiveFile": false,
+                "chooseFromSubfolders": false
+              },
+              "appendLink": false,
+              "copyLinkToClipboard": false,
+              "openFile": true,
+              "fileOpening": {
+                "location": "tab",
+                "direction": "vertical",
+                "mode": "default",
+                "focus": true
+              },
+              "fileExistsBehavior": {
+                "kind": "prompt"
+              }
             }
           ]
         },
