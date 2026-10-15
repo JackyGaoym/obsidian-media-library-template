@@ -1,5 +1,5 @@
 // Shared, read-only search rules for the full search and category pages.
-if (!window.__mediaLibraryQuery || window.__mediaLibraryQuery.version !== 2) {
+if (!window.__mediaLibraryQuery || window.__mediaLibraryQuery.version !== 3) {
   const scrollBindings = new WeakMap();
   const toArray = value => {
     if (!value) return [];
@@ -77,7 +77,7 @@ if (!window.__mediaLibraryQuery || window.__mediaLibraryQuery.version !== 2) {
         .map(plainText).filter(Boolean);
       const people = [
         ...values(page.authors), ...values(page.translators), ...values(page.directors),
-        ...values(page.screenwriters), ...values(page.cast), plainText(page.publisher),
+        ...values(page.screenwriters), ...values(page.cast), ...values(page.artists), plainText(page.publisher),
         plainText(page.developer)
       ].filter(Boolean);
       const relations = [
@@ -86,7 +86,7 @@ if (!window.__mediaLibraryQuery || window.__mediaLibraryQuery.version !== 2) {
       ].filter(Boolean);
       const categories = [
         typeMeta[page.media_type]?.label, page.media_type, page.status,
-        ...values(page.genres), ...values(page.platforms), plainText(page.format),
+        ...values(page.genres), ...values(page.platforms), plainText(page.format), plainText(page.album_type), plainText(page.medium),
         ...values(page.country), ...values(page.language),
         effectiveRelations.seriesName ? "系列" : "",
         effectiveRelations.collectionNames.length ? "合集" : ""
@@ -141,5 +141,5 @@ if (!window.__mediaLibraryQuery || window.__mediaLibraryQuery.version !== 2) {
       host.scrollTop = Math.max(0, Number(state.scrollTop) || 0);
     }, 80);
   };
-  window.__mediaLibraryQuery = { version: 2, normalize, createIndex, matches, readState, saveState, bindScroll };
+  window.__mediaLibraryQuery = { version: 3, normalize, createIndex, matches, readState, saveState, bindScroll };
 }

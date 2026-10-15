@@ -158,7 +158,7 @@ const progressFor = page => {
       ? ["current_episode", "episode_count", "集"]
       : progressType === "movie"
         ? ["current_minutes", "runtime_minutes", "分钟"]
-        : progressType === "game"
+        : ["game", "music"].includes(progressType)
           ? ["progress_percent", null, "%"]
           : null;
   if (!config) return null;
@@ -180,7 +180,7 @@ const formatMinutes = minutes => {
 };
 
 const titleForExperience = item => {
-  const labels = { book: "阅读", tv: "观看", movie: "观看", anime: "观看", game: "游玩", variety: "观看", documentary: "观看" };
+  const labels = { book: "阅读", tv: "观看", movie: "观看", anime: "观看", game: "游玩", variety: "观看", documentary: "观看", short_drama: "观看", music: "收听" };
   return `第 ${item.index} 次${labels[item.type] || "体验"}`;
 };
 

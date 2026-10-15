@@ -28,7 +28,7 @@
   "onlineSettingsGistId": "35693f9ece9bd6abba98f94e81afde19",
   "movieTemplateFile": "媒体库/模板/豆瓣/豆瓣导入电影.md",
   "bookTemplateFile": "媒体库/模板/豆瓣/豆瓣导入图书.md",
-  "musicTemplateFile": "",
+  "musicTemplateFile": "媒体库/模板/豆瓣/豆瓣导入音乐.md",
   "noteTemplateFile": "",
   "gameTemplateFile": "媒体库/模板/豆瓣/豆瓣导入游戏.md",
   "teleplayTemplateFile": "媒体库/模板/豆瓣/豆瓣导入电视剧.md",

@@ -110,12 +110,42 @@ const MEDIA_TYPE_DEFAULTS = [
     pending: "待观看",
     active: "观看中",
     add: "新增纪录片"
+  },
+  {
+    id: "music",
+    label: "音乐",
+    icon: "disc-3",
+    color: "#41bdb5",
+    format: "music",
+    unit: "张",
+    subtitle: "专辑与单曲；记录表演者、曲目、评分和收听进度。",
+    pending: "待收听",
+    active: "收听中",
+    quickAddChoiceId: "edc9f5fb-1a6f-490c-bd02-d50925393948",
+    path: "媒体库/导航/音乐",
+    defaultEnabled: false,
+    add: "新增音乐"
+  },
+  {
+    id: "short_drama",
+    label: "短剧",
+    icon: "smartphone",
+    color: "#e5915a",
+    format: "series",
+    unit: "部",
+    subtitle: "短剧与微短剧；沿用豆瓣影视导入，按集数记录。",
+    pending: "待观看",
+    active: "观看中",
+    quickAddChoiceId: "f10f9a3c-591f-4eb2-816a-fadafc873b7b",
+    path: "媒体库/导航/短剧",
+    defaultEnabled: false,
+    add: "新增短剧"
   }
 ];
 
 const typeControllers = window.__mediaLibraryTypeControllers
   || (window.__mediaLibraryTypeControllers = new Map());
-const MEDIA_TYPE_CONTROLLER_VERSION = 7;
+const MEDIA_TYPE_CONTROLLER_VERSION = 8;
 const existingTypeController = typeControllers.get(vaultName);
 if (existingTypeController && existingTypeController.version !== MEDIA_TYPE_CONTROLLER_VERSION) {
   existingTypeController.cancelPendingImport?.();
@@ -178,12 +208,13 @@ if (!typeControllers.has(vaultName)) {
   };
   const inferFormat = page => {
     const explicit = String(page?.media_format || "");
-    if (["book", "movie", "series", "game"].includes(explicit)) return explicit;
+    if (["book", "movie", "series", "game", "music"].includes(explicit)) return explicit;
     const type = String(page?.media_type || "");
     if (type === "book") return "book";
     if (type === "movie") return "movie";
     if (type === "tv" || type === "anime") return "series";
-    if (type === "game") return "game";
+    if (type === "game" || type === "music") return type;
+    if (type === "short_drama") return "series";
     if (Number(page?.episode_count || 0) > 0 || Number(page?.current_episode || 0) > 0) return "series";
     if (Number(page?.runtime_minutes || 0) > 0 || Number(page?.current_minutes || 0) > 0) return "movie";
     return defaultsById.get(type)?.format || "series";

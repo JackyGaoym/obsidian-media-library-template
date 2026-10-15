@@ -1,7 +1,7 @@
 const DOUBAN_COMMAND = "obsidian-douban-plugin:searcher-douban-import-and-create-file-movie-tv";
 const WORK_FOLDER = "媒体库/作品/";
 const SESSION_TIMEOUT = 5 * 60 * 1000;
-const TYPE_LABELS = { variety: "综艺", documentary: "纪录片" };
+const TYPE_LABELS = { variety: "综艺", documentary: "纪录片", short_drama: "短剧" };
 
 const importAs = ({ app, obsidian }, typeId) => {
   const plugin = app.plugins?.plugins?.["obsidian-douban-plugin"];
@@ -75,7 +75,7 @@ const importAs = ({ app, obsidian }, typeId) => {
           || String(frontmatter.source_id) !== sourceId) return;
 
         const importedType = String(frontmatter.media_type || "");
-        const format = importedType === "movie" ? "movie"
+        const format = typeId === "short_drama" ? "series" : importedType === "movie" ? "movie"
           : (["tv", "anime"].includes(importedType) ? "series"
             : (Number(frontmatter.episode_count || 0) > 0 ? "series"
               : (Number(frontmatter.runtime_minutes || 0) > 0 ? "movie"
@@ -137,7 +137,31 @@ const importAs = ({ app, obsidian }, typeId) => {
   }
 };
 
-module.exports = {
-  variety: params => importAs(params, "variety"),
-  documentary: params => importAs(params, "documentary")
+const importWithConfig = async (params, typeId) => {
+  const { app, obsidian } = params;
+  if (!app.plugins?.plugins?.["obsidian-douban-plugin"]) {
+    new obsidian.Notice("请先安装并启用豆瓣插件，再使用豆瓣导入");
+    return false;
+  }
+  try {
+    if (window.__mediaLibraryDoubanConfig?.version !== 1) {
+      const file = app.vault.getAbstractFileByPath("媒体库/视图/豆瓣配置/view.js");
+      if (!file) throw new Error("缺少媒体库/视图/豆瓣配置/view.js，请补齐模板视图");
+      // QuickAdd commands can run before any Dataview page has been opened.
+      new Function("window", await app.vault.read(file))(window);
+    }
+    if (!await window.__mediaLibraryDoubanConfig.ensure(app, obsidian)) return false;
+    if (TYPE_LABELS[typeId]) return importAs(params, typeId);
+    const category = { book: "book", tv: "movie-tv", movie: "movie-tv", anime: "movie-tv", game: "game", music: "music" }[typeId];
+    if (!category) return false;
+    const launched = app.commands.executeCommandById(`obsidian-douban-plugin:searcher-douban-import-and-create-file-${category}`);
+    if (!launched) new obsidian.Notice("无法打开豆瓣搜索，请确认豆瓣插件已启用");
+    return launched;
+  } catch (error) {
+    new obsidian.Notice(String(error.message || "无法检查豆瓣导入配置，请重试"));
+    return false;
+  }
 };
+
+module.exports = Object.fromEntries(["book", "tv", "movie", "anime", "game", "music", "variety", "documentary", "short_drama"]
+  .map(typeId => [typeId, params => importWithConfig(params, typeId)]));

@@ -68,6 +68,11 @@
     "edition": "text",
     "played_on": "multitext",
     "year_verified": "checkbox",
-    "verified_year": "number"
+    "verified_year": "number",
+    "artists": "multitext",
+    "album_type": "text",
+    "medium": "text",
+    "track_list": "multitext",
+    "reflection": "text"
   }
 }

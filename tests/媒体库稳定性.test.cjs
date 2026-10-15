@@ -484,13 +484,14 @@ test('collection cover and backdrop pickers use Chinese labels and file names', 
 test('rating and progress synchronization preserve a confirmed year', async () => {
   const { context, files } = fixture(
     { status: '已完成', experience_index: 1, current_minutes: 100, runtime_minutes: 100, finished_at: '2025-02-03', rating: 4 },
-    { record_origin: 'tracked', date_certainty: 'approximate', year_verified: true, verified_year: 2024, ended_at: '2025-02-03' }
+    { record_origin: 'tracked', date_certainty: 'approximate', year_verified: true, verified_year: 2024, ended_at: '2025-02-03', reflection: '第一次阅读的理解' }
   );
   await context.syncEndedSnapshot();
   const saved = [...files.values()][0].fm;
   assert.equal(saved.date_certainty, 'approximate');
   assert.equal(saved.verified_year, 2024);
   assert.equal(saved.year_verified, true);
+  assert.equal(saved.reflection, '第一次阅读的理解');
 });
 
 test('clearing the work finish date marks the current record date unknown', async () => {

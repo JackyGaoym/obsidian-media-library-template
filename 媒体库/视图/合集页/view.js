@@ -1,4 +1,6 @@
 await dv.view("媒体库/视图/主题");
+await dv.view("媒体库/视图/领域");
+await dv.view("媒体库/视图/删除");
 
 const page = dv.current();
 
@@ -201,7 +203,10 @@ if (coverUrl) {
 }
 
 profile.createDiv({ cls: "media-collection-kind", text: kind });
-profile.createEl("h1", { cls: "media-collection-title", text: title });
+const titleRow = profile.createDiv({ cls: "media-collection-title-row" });
+titleRow.createEl("h1", { cls: "media-collection-title", text: title });
+try { window.__mediaLibraryDeletion?.mount(app, titleRow, page.file.path); }
+catch (error) { console.error("删除入口加载失败，继续显示合集详情", error); }
 profile.createDiv({ cls: "media-collection-description", text: page.description ? String(page.description) : defaultDescription });
 const memberCount = profile.createDiv({ cls: "media-collection-count", text: `${members.length} 部作品` });
 

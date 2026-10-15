@@ -1,8 +1,8 @@
 // Keep QuickAdd compatibility checks separate from type definitions and theme state.
-if (!window.__mediaLibraryImportAdapter || window.__mediaLibraryImportAdapter.version !== 3) {
+if (!window.__mediaLibraryImportAdapter || window.__mediaLibraryImportAdapter.version !== 5) {
   const showNotice = message => {
     try {
-      const NoticeClass = typeof require === "function" ? require("obsidian").Notice : null;
+      const NoticeClass = window.__mediaLibraryObsidian?.Notice || (typeof require === "function" ? require("obsidian").Notice : null);
       if (NoticeClass) new NoticeClass(message);
     } catch (error) {
       console.error(message, error);
@@ -24,7 +24,7 @@ if (!window.__mediaLibraryImportAdapter || window.__mediaLibraryImportAdapter.ve
     let ModalClass = null;
     let setIcon = null;
     try {
-      const obsidian = typeof require === "function" ? require("obsidian") : null;
+      const obsidian = window.__mediaLibraryObsidian || (typeof require === "function" ? require("obsidian") : null);
       ModalClass = obsidian?.Modal;
       setIcon = obsidian?.setIcon;
     } catch (error) {
@@ -92,27 +92,29 @@ if (!window.__mediaLibraryImportAdapter || window.__mediaLibraryImportAdapter.ve
   };
   const launch = async (app, type, allTypes, options = {}) => {
     if (!type?.quickAddChoiceId) return false;
-    if (type.flexibleFormat) {
-      try {
-        const quickAdd = app.plugins?.plugins?.quickadd;
-        let changed = false;
-        for (const flexibleType of allTypes.filter(item => item.flexibleFormat)) {
-          const choice = quickAdd?.getChoiceById?.(flexibleType.quickAddChoiceId);
-          const importChoice = choice?.choices?.find(item => item.name === `豆瓣导入${flexibleType.label}`);
-          const command = importChoice?.macro?.commands?.[0];
-          if (command?.type !== "Obsidian"
-            || command.commandId !== "obsidian-douban-plugin:searcher-douban-import-and-create-file-movie-tv") continue;
-          command.type = "UserScript";
-          command.path = "媒体库/视图/主题/豆瓣分类导入.js";
-          command.name = `豆瓣分类导入::${flexibleType.id}`;
-          command.settings = {};
-          delete command.commandId;
-          changed = true;
-        }
-        if (changed) await quickAdd.saveSettings?.();
-      } catch (error) {
-        console.error("无法更新综艺和纪录片的豆瓣导入入口", error);
+    try {
+      const quickAdd = app.plugins?.plugins?.quickadd;
+      let changed = false;
+      const categories = { book: "book", tv: "movie-tv", movie: "movie-tv", anime: "movie-tv", game: "game",
+        music: "music", variety: "movie-tv", documentary: "movie-tv", short_drama: "movie-tv" };
+      for (const mediaType of allTypes) {
+        const choice = quickAdd?.getChoiceById?.(mediaType.quickAddChoiceId);
+        const importChoice = choice?.choices?.find(item => item.name === `豆瓣导入${mediaType.label}`);
+        const command = importChoice?.macro?.commands?.[0];
+        // Upgrade only our original one-command macros, never custom workflows.
+        if (importChoice?.macro?.commands?.length !== 1 || !categories[mediaType.id]
+          || command?.type !== "Obsidian"
+          || command.commandId !== `obsidian-douban-plugin:searcher-douban-import-and-create-file-${categories[mediaType.id]}`) continue;
+        command.type = "UserScript";
+        command.path = "媒体库/视图/主题/豆瓣分类导入.js";
+        command.name = `豆瓣分类导入::${mediaType.id}`;
+        command.settings = {};
+        delete command.commandId;
+        changed = true;
       }
+      if (changed) await quickAdd.saveSettings?.();
+    } catch (error) {
+      console.error("无法更新媒体库的豆瓣导入入口", error);
     }
     if (isMobile(app)) return openMobileChoicePicker(app, type, app.plugins?.plugins?.quickadd, options);
     const commandId = `quickadd:choice:${type.quickAddChoiceId}`;
@@ -133,5 +135,5 @@ if (!window.__mediaLibraryImportAdapter || window.__mediaLibraryImportAdapter.ve
     }
     return app.commands.executeCommandById(commandId);
   };
-  window.__mediaLibraryImportAdapter = { version: 3, launch };
+  window.__mediaLibraryImportAdapter = { version: 5, launch };
 }
