@@ -171,7 +171,9 @@ const searchInput = search.createEl("input", {
 const navigation = sidebar.createDiv({ cls: "media-collection-index-navigation" });
 const panel = root.createEl("main", { cls: "media-collection-index-panel" });
 
-const compactLayout = window.matchMedia("(max-width: 680px)");
+// CSS owns the breakpoint so click behavior follows the current pane layout.
+const isCompactLayout = () => getComputedStyle(root)
+  .getPropertyValue("--media-collection-index-compact").trim() === "1";
 let mobileListScrollTop = 0;
 
 const pageScroller = () => root.closest(".markdown-preview-view, .cm-scroller, .view-content");
@@ -188,25 +190,8 @@ const scrollAppToTop = () => {
   scroller.scrollTo({ top: Math.max(0, top - 8), behavior: "auto" });
 };
 
-const syncMobileVisibility = () => {
-  if (!compactLayout.matches) {
-    sidebar.removeAttribute("aria-hidden");
-    panel.removeAttribute("aria-hidden");
-    return;
-  }
-  const showingDetail = root.classList.contains("is-mobile-detail");
-  if (showingDetail) {
-    sidebar.setAttribute("aria-hidden", "true");
-    panel.removeAttribute("aria-hidden");
-  } else {
-    sidebar.removeAttribute("aria-hidden");
-    panel.setAttribute("aria-hidden", "true");
-  }
-};
-
 const leaveMobileDetail = () => {
   root.classList.remove("is-mobile-detail");
-  syncMobileVisibility();
   requestAnimationFrame(() => {
     const scroller = pageScroller();
     if (scroller) scroller.scrollTo({ top: mobileListScrollTop, behavior: "auto" });
@@ -238,7 +223,8 @@ const renderThumb = (parent, group, cls, members = [], mode = "cover") => {
 };
 
 const selectGroup = group => {
-  const enteringMobileDetail = compactLayout.matches
+  const compactLayout = isCompactLayout();
+  const enteringMobileDetail = compactLayout
     && !root.classList.contains("is-mobile-detail");
   if (enteringMobileDetail) {
     mobileListScrollTop = pageScroller()?.scrollTop || 0;
@@ -246,10 +232,12 @@ const selectGroup = group => {
   selected = group;
   renderNavigation(searchInput.value);
   renderPanel(group);
-  if (compactLayout.matches) {
+  if (compactLayout) {
     root.classList.add("is-mobile-detail");
-    syncMobileVisibility();
-    requestAnimationFrame(scrollAppToTop);
+    requestAnimationFrame(() => {
+      scrollAppToTop();
+      panel.querySelector(".media-collection-index-mobile-back-button")?.focus({ preventScroll: true });
+    });
   } else {
     panel.scrollTop = 0;
   }
@@ -382,7 +370,10 @@ const renderPanel = group => {
       "aria-label": "返回合集与系列列表"
     }
   });
-  const mobileBackIcon = mobileBackButton.createSpan({ cls: "media-collection-index-mobile-back-icon" });
+  const mobileBackIcon = mobileBackButton.createSpan({
+    cls: "media-collection-index-mobile-back-icon",
+    attr: { "aria-hidden": "true" }
+  });
   addIcon(mobileBackIcon, "chevron-left");
   mobileBackButton.createSpan({ text: "合集与系列" });
   mobileBackButton.addEventListener("click", leaveMobileDetail);
@@ -489,7 +480,5 @@ const renderPanel = group => {
 };
 
 searchInput.addEventListener("input", () => renderNavigation(searchInput.value));
-compactLayout.addEventListener?.("change", syncMobileVisibility);
 renderNavigation();
 renderPanel(selected);
-syncMobileVisibility();
